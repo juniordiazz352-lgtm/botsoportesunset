@@ -6,7 +6,7 @@ from core.config import GUILD_ID
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-async def load():
+async def setup_bot():
     for f in os.listdir("./bot/cogs"):
         if f.endswith(".py"):
             try:
@@ -19,6 +19,3 @@ async def load():
 async def on_ready():
     print(f"🔥 BOT ONLINE: {bot.user}")
     await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
-
-import asyncio
-asyncio.run(load())
