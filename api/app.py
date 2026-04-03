@@ -5,8 +5,6 @@ from core.db import load, close_ticket, update_form_status
 app = FastAPI()
 
 @app.get("/")
-def home():
-    return HTMLResponse(open("web/templates/dashboard.html").read())
 
 @app.get("/data")
 def data():
@@ -21,3 +19,15 @@ def close(id: str):
 def form_action(id: str, action: str):
     update_form_status(id, action)
     return {"ok": True}
+
+import os
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATE_PATH = os.path.join(BASE_DIR, "web", "templates", "dashboard.html")
+
+
+def home():
+    with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+        html = f.read()
+    return HTMLResponse(html)
