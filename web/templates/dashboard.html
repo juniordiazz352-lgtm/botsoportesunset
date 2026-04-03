@@ -4,61 +4,69 @@
 <style>
 body{background:#0f172a;color:white;font-family:sans-serif}
 .card{background:#1e293b;padding:15px;margin:10px;border-radius:10px}
-button{margin-top:5px;padding:5px}
+input{margin:5px;padding:5px}
+button{margin:5px;padding:5px}
 </style>
 </head>
 
 <body>
 
-<h1>💀 PANEL CONTROL TOTAL</h1>
+<h1>💀 Editor de Paneles</h1>
 
-<h2>🎫 Tickets</h2>
-<div id="tickets"></div>
+<div class="card">
+<h2>Crear Panel</h2>
 
-<h2>📋 Formularios</h2>
-<div id="forms"></div>
+<input id="channel" placeholder="ID Canal"><br>
+<input id="title" placeholder="Título"><br>
+<input id="desc" placeholder="Descripción"><br>
+
+<h3>Botones</h3>
+<div id="botones"></div>
+
+<button onclick="addBtn()">➕ Añadir botón</button>
+<button onclick="crear()">🚀 Crear Panel</button>
+</div>
 
 <script>
-async function load(){
- let res=await fetch("/data")
- let data=await res.json()
+let botones = []
 
- let t=""
- for(let id in data.tickets){
-   t+=`<div class="card">
-   Ticket ${id} - ${data.tickets[id].status}
-   <br><button onclick="closeT('${id}')">Cerrar</button>
-   </div>`
- }
- document.getElementById("tickets").innerHTML=t
+function addBtn(){
+    let label = prompt("Nombre botón")
+    let cat = prompt("ID categoría")
 
- let f=""
- data.responses?.forEach(x=>{
-   f+=`<div class="card">
-   Form ${x.id} - ${x.status}
-   <br><button onclick="approve('${x.id}')">Aprobar</button>
-   <button onclick="reject('${x.id}')">Rechazar</button>
-   </div>`
- })
- document.getElementById("forms").innerHTML=f
+    botones.push({
+        label: label,
+        categoria_id: parseInt(cat),
+        tipo: label.toLowerCase().replace(/ /g,"-")
+    })
+
+    render()
 }
 
-async function closeT(id){
- await fetch(`/close_ticket/${id}`,{method:"POST"})
- load()
+function render(){
+    let html=""
+    botones.forEach(b=>{
+        html+=`<div>${b.label} (${b.tipo})</div>`
+    })
+    document.getElementById("botones").innerHTML=html
 }
 
-async function approve(id){
- await fetch(`/form/${id}/approved`,{method:"POST"})
- load()
-}
+async function crear(){
+    let data={
+        channel_id: document.getElementById("channel").value,
+        title: document.getElementById("title").value,
+        description: document.getElementById("desc").value,
+        botones: botones
+    }
 
-async function reject(id){
- await fetch(`/form/${id}/rejected`,{method:"POST"})
- load()
-}
+    await fetch("/create_panel",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(data)
+    })
 
-load()
+    alert("Panel creado 💀")
+}
 </script>
 
 </body>
