@@ -83,3 +83,22 @@ def get_ticket_number(tipo):
     save(data)
 
     return str(data["counters"][tipo]).zfill(4)
+
+def save_panel(channel_id, message_id, botones):
+    data = load()
+
+    if "panels" not in data:
+        data["panels"] = []
+
+    data["panels"].append({
+        "channel_id": channel_id,
+        "message_id": message_id,
+        "botones": botones
+    })
+
+    save(data)
+
+
+def get_panels():
+    data = load()
+    return data.get("panels", [])
