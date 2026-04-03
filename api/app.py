@@ -8,6 +8,61 @@ import discord
 from bot.views.ticket_panel import TicketPanel
 from bot.main import bot
 import asyncio
+import requests
+from fastapi.responses import RedirectResponse
+from core.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
+
+# LOGIN
+@app.get("/login")
+def login():
+    url = (
+        "https://discord.com/api/oauth2/authorize"
+        f"?client_id={CLIENT_ID}"
+        "&response_type=code"
+        "&scope=identify guilds"
+        f"&redirect_uri={REDIRECT_URI}"
+    )
+    return RedirectResponse(url)
+
+# CALLBACK
+@app.get("/callback")
+def callback(code: str):
+
+    data = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": REDIRECT_URI
+    }
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    token = requests.post(
+        "https://discord.com/api/oauth2/token",
+        data=data,
+        headers=headers
+    ).json()
+
+    access_token = token["access_token"]
+
+    user = requests.get(
+        "https://discord.com/api/users/@me",
+        headers={"Authorization": f"Bearer {access_token}"}
+    ).json()
+
+    guilds = requests.get(
+        "https://discord.com/api/users/@me/guilds",
+        headers={"Authorization": f"Bearer {access_token}"}
+    ).json()
+
+    return {
+        "user": user,
+        "guilds": guilds,
+        "token": access_token
+    }
 
 loop = asyncio.get_event_loop()
 
