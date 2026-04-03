@@ -1,6 +1,9 @@
 import discord
 from discord.ui import View, button
 from core.db import update_form_status
+from core.logs import log
+
+await log(interaction, f"Formulario {self.form_id} aprobado por {interaction.user}")
 
 class FormReview(View):
     def __init__(self, form_id, user_id):
