@@ -16,7 +16,11 @@ class TicketPanel(View):
 
 class TicketButton(Button):
     def __init__(self, label, category_id, tipo):
-        super().__init__(label=label, style=discord.ButtonStyle.green)
+       super().__init__(
+    label=label,
+    style=discord.ButtonStyle.green,
+    custom_id=f"ticket_{tipo}"
+)
         self.category_id = category_id
         self.tipo = tipo
 
