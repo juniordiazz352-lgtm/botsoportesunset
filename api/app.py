@@ -1,33 +1,34 @@
+import os
+import threading
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from core.db import load, close_ticket, update_form_status
+from fastapi.responses import HTMLResponse, JSONResponse
+from bot.main import bot
+from core.config import TOKEN
 
 app = FastAPI()
 
-@app.get("/")
-
-@app.get("/data")
-def data():
-    return load()
-
-@app.post("/close_ticket/{id}")
-def close(id: str):
-    close_ticket(id)
-    return {"ok": True}
-
-@app.post("/form/{id}/{action}")
-def form_action(id: str, action: str):
-    update_form_status(id, action)
-    return {"ok": True}
-
-import os
-
-
+# ===== PATH CORRECTO =====
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATE_PATH = os.path.join(BASE_DIR, "web", "templates", "dashboard.html")
 
-
+# ===== DASHBOARD =====
+@app.get("/")
 def home():
-    with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
-        html = f.read()
-    return HTMLResponse(html)
+    try:
+        if not os.path.exists(TEMPLATE_PATH):
+            return JSONResponse({"error": "dashboard.html no encontrado"})
+
+        with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
+
+# ===== BOT THREAD =====
+def run_bot():
+    try:
+        bot.run(TOKEN)
+    except Exception as e:
+        print("ERROR BOT:", e)
+
+threading.Thread(target=run_bot).start()
