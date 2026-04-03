@@ -1,89 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Dashboard</title>
-
 <style>
-body{
- background:#0f172a;
- color:white;
- font-family:Arial;
-}
-
-.container{
- display:flex;
- flex-wrap:wrap;
- gap:20px;
-}
-
-.card{
- background:#1e293b;
- padding:15px;
- border-radius:12px;
- width:200px;
- transition:0.3s;
-}
-
-.card:hover{
- transform:scale(1.05);
-}
-
-button{
- background:#3b82f6;
- border:none;
- padding:6px;
- color:white;
- border-radius:5px;
- cursor:pointer;
-}
-
-h1{text-align:center}
+body{background:#0f172a;color:white;font-family:sans-serif}
+.card{background:#1e293b;padding:15px;margin:10px;border-radius:10px}
+button{margin-top:5px;padding:5px}
 </style>
-
 </head>
 
 <body>
 
-<h1>🚀 Dashboard PRO</h1>
+<h1>💀 PANEL CONTROL TOTAL</h1>
 
-<a href="/login">
-<button>Login con Discord</button>
-</a>
+<h2>🎫 Tickets</h2>
+<div id="tickets"></div>
 
 <h2>📋 Formularios</h2>
-<div id="forms" class="container"></div>
+<div id="forms"></div>
 
 <script>
 async function load(){
  let res=await fetch("/data")
  let data=await res.json()
 
- let html=""
-
- for(let f in data.forms){
-   html+=`<div class="card">
-   <b>${f}</b><br>
-   Preguntas: ${data.forms[f].length}
+ let t=""
+ for(let id in data.tickets){
+   t+=`<div class="card">
+   Ticket ${id} - ${data.tickets[id].status}
+   <br><button onclick="closeT('${id}')">Cerrar</button>
    </div>`
  }
+ document.getElementById("tickets").innerHTML=t
 
- document.getElementById("forms").innerHTML=html
+ let f=""
+ data.responses?.forEach(x=>{
+   f+=`<div class="card">
+   Form ${x.id} - ${x.status}
+   <br><button onclick="approve('${x.id}')">Aprobar</button>
+   <button onclick="reject('${x.id}')">Rechazar</button>
+   </div>`
+ })
+ document.getElementById("forms").innerHTML=f
+}
+
+async function closeT(id){
+ await fetch(`/close_ticket/${id}`,{method:"POST"})
+ load()
+}
+
+async function approve(id){
+ await fetch(`/form/${id}/approved`,{method:"POST"})
+ load()
+}
+
+async function reject(id){
+ await fetch(`/form/${id}/rejected`,{method:"POST"})
+ load()
 }
 
 load()
 </script>
 
-</body>
-</html>
-
-
-<style>
-body{background:#0f172a;color:white;font-family:sans-serif}
-.card{background:#1e293b;padding:15px;margin:10px;border-radius:10px}
-</style>
-</head>
-<body>
-<h1>🚀 Panel PRO</h1>
-<p>Bot funcionando correctamente</p>
 </body>
 </html>
