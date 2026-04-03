@@ -69,3 +69,17 @@ def update_form_status(form_id, status):
             if str(f["id"]) == str(form_id):
                 f["status"] = status
     save(data)
+
+def get_ticket_number(tipo):
+    data = load()
+
+    if "counters" not in data:
+        data["counters"] = {}
+
+    if tipo not in data["counters"]:
+        data["counters"][tipo] = 0
+
+    data["counters"][tipo] += 1
+    save(data)
+
+    return str(data["counters"][tipo]).zfill(4)
