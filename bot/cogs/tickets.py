@@ -51,10 +51,13 @@ class Tickets(commands.Cog):
             color=discord.Color.green()
         )
 
-        await interaction.channel.send(
-            embed=embed,
-            view=TicketPanel(botones)
-        )
+        msg = await interaction.channel.send(
+    embed=embed,
+    view=TicketPanel(botones)
+)
+
+from core.db import save_panel
+save_panel(interaction.channel.id, msg.id, botones)
 
         await interaction.followup.send("✅ Panel creado")
 
