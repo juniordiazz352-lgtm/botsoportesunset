@@ -11,36 +11,52 @@ class Tickets(commands.Cog):
     async def crear_panel(self, interaction: discord.Interaction):
 
         await interaction.response.send_message(
-            "📌 Escribe el título del panel:", ephemeral=True
+            "📌 ¿Cuántos botones quieres?", ephemeral=True
         )
 
         def check(m): return m.author == interaction.user
-        msg1 = await self.bot.wait_for("message", check=check)
 
-        await interaction.followup.send("📝 Escribe la descripción:")
-        msg2 = await self.bot.wait_for("message", check=check)
+        msg = await self.bot.wait_for("message", check=check)
+        cantidad = int(msg.content)
 
-        await interaction.followup.send("📂 Menciona la categoría:")
-        msg3 = await self.bot.wait_for("message", check=check)
+        botones = []
 
-        if not msg3.channel_mentions:
-            return await interaction.followup.send("❌ Debes mencionar una categoría")
+        for i in range(cantidad):
+            await interaction.followup.send(f"🔘 Nombre botón {i+1}:")
+            nombre = await self.bot.wait_for("message", check=check)
 
-        category = msg3.channel_mentions[0]
+            await interaction.followup.send(f"📂 Menciona categoría {i+1}:")
+            cat_msg = await self.bot.wait_for("message", check=check)
+
+            if not cat_msg.channel_mentions:
+                return await interaction.followup.send("❌ Categoría inválida")
+
+            categoria = cat_msg.channel_mentions[0]
+
+            botones.append({
+                "label": nombre.content,
+                "categoria_id": categoria.id,
+                "tipo": nombre.content.lower().replace(" ", "-")
+            })
+
+        await interaction.followup.send("📝 Título del panel:")
+        titulo = await self.bot.wait_for("message", check=check)
+
+        await interaction.followup.send("📄 Descripción:")
+        desc = await self.bot.wait_for("message", check=check)
 
         embed = discord.Embed(
-            title=msg1.content,
-            description=msg2.content,
+            title=titulo.content,
+            description=desc.content,
             color=discord.Color.green()
         )
 
         await interaction.channel.send(
             embed=embed,
-            view=TicketPanel(category.id)
+            view=TicketPanel(botones)
         )
 
         await interaction.followup.send("✅ Panel creado")
 
-# obligatorio
 async def setup(bot):
     await bot.add_cog(Tickets(bot))
