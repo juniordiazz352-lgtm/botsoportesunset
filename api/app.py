@@ -1,18 +1,17 @@
 from fastapi import FastAPI
-from core.db import load, create_form, add_question
+from fastapi.responses import HTMLResponse
+from api.auth import router as auth_router
+from core.db import load
 
 app = FastAPI()
 
+app.include_router(auth_router)
+
 @app.get("/")
 def home():
+    html = open("web/templates/dashboard.html").read()
+    return HTMLResponse(html)
+
+@app.get("/data")
+def data():
     return load()
-
-@app.post("/create_form/{name}")
-def create(name: str):
-    create_form(name)
-    return {"ok": True}
-
-@app.post("/add_question/{form}")
-def add_q(form: str, q: str):
-    add_question(form, q)
-    return {"ok": True}
