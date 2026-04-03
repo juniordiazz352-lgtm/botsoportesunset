@@ -25,10 +25,16 @@ def home():
         return JSONResponse({"error": str(e)})
 
 # ===== BOT THREAD =====
+import threading
+import asyncio
+from bot.main import bot, setup_bot
+from core.config import TOKEN
+
 def run_bot():
-    try:
-        bot.run(TOKEN)
-    except Exception as e:
-        print("ERROR BOT:", e)
+    async def start():
+        await setup_bot()
+        await bot.start(TOKEN)
+
+    asyncio.run(start())
 
 threading.Thread(target=run_bot).start()
