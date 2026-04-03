@@ -39,6 +39,25 @@ class TicketControls(View):
 
     @button(label="✏️ Renombrar", style=discord.ButtonStyle.blurple)
     async def rename(self, interaction: discord.Interaction, _):
+
+
+from core.transcript import generate_transcript
+from core.logs import log
+
+
+    html = generate_transcript(messages)
+
+    file = discord.File(
+        fp=bytes(html, "utf-8"),
+        filename="transcript.html"
+    )
+
+    await interaction.channel.send("📄 Transcript generado", file=file)
+
+    await log(interaction, f"{interaction.user} cerró ticket {interaction.channel.name}")
+
+    close_ticket(interaction.channel.id)
+    await interaction.channel.delete()        
         if not is_staff(interaction):
             return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
 
