@@ -7,6 +7,9 @@ from core.config import TOKEN
 import discord
 from bot.views.ticket_panel import TicketPanel
 from bot.main import bot
+import asyncio
+
+loop = asyncio.get_event_loop()
 
 app = FastAPI()
 
@@ -48,10 +51,10 @@ async def create_panel(request: Request):
         description=description
     )
 
-    msg = await channel.send(
-        embed=embed,
-        view=TicketPanel(botones)
-    )
+   msg = await asyncio.run_coroutine_threadsafe(
+    channel.send(embed=embed, view=TicketPanel(botones)),
+    loop
+).result()
 
     save_panel(channel_id, msg.id, botones)
 
