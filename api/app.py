@@ -95,6 +95,11 @@ async def create_panel(request: Request):
     data = await request.json()
 
     channel_id = int(data["channel_id"])
+   @app.post("/create_panel")
+async def create_panel(request: Request):
+    data = await request.json()
+
+    channel_id = int(data["channel_id"])
     title = data["title"]
     description = data["description"]
     botones = data["botones"]
@@ -106,16 +111,16 @@ async def create_panel(request: Request):
         description=description
     )
 
-   msg = await asyncio.run_coroutine_threadsafe(
-    channel.send(embed=embed, view=TicketPanel(botones)),
-    loop
-).result()
+    future = asyncio.run_coroutine_threadsafe(
+        channel.send(embed=embed, view=TicketPanel(botones)),
+        bot.loop
+    )
+
+    msg = future.result()
 
     save_panel(channel_id, msg.id, botones)
 
     return {"ok": True}
-
-
 # OBTENER PANELES
 @app.get("/panels")
 def panels():
