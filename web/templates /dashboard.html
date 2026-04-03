@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+
+<style>
+body{
+ background:#0f172a;
+ color:white;
+ font-family:Arial;
+}
+
+.container{
+ display:flex;
+ flex-wrap:wrap;
+ gap:20px;
+}
+
+.card{
+ background:#1e293b;
+ padding:15px;
+ border-radius:12px;
+ width:200px;
+ transition:0.3s;
+}
+
+.card:hover{
+ transform:scale(1.05);
+}
+
+button{
+ background:#3b82f6;
+ border:none;
+ padding:6px;
+ color:white;
+ border-radius:5px;
+ cursor:pointer;
+}
+
+h1{text-align:center}
+</style>
+
+</head>
+
+<body>
+
+<h1>🚀 Dashboard PRO</h1>
+
+<a href="/login">
+<button>Login con Discord</button>
+</a>
+
+<h2>📋 Formularios</h2>
+<div id="forms" class="container"></div>
+
+<script>
+async function load(){
+ let res=await fetch("/data")
+ let data=await res.json()
+
+ let html=""
+
+ for(let f in data.forms){
+   html+=`<div class="card">
+   <b>${f}</b><br>
+   Preguntas: ${data.forms[f].length}
+   </div>`
+ }
+
+ document.getElementById("forms").innerHTML=html
+}
+
+load()
+</script>
+
+</body>
+</html>
