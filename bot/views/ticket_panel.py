@@ -1,27 +1,41 @@
 import discord
-from discord.ui import View, button
-from core.db import create_ticket
+from discord.ui import View, Button
+from core.db import create_ticket, get_ticket_number
 from bot.views.ticket_controls import TicketControls
 
 class TicketPanel(View):
-    def __init__(self, category_id):
+    def __init__(self, botones):
         super().__init__(timeout=None)
-        self.category_id = category_id
 
-    @button(label="🎫 Crear Ticket", style=discord.ButtonStyle.green)
-    async def create_ticket_btn(self, interaction: discord.Interaction, _):
+        # botones = lista de dicts
+        # [{label, categoria_id, tipo}]
+
+        for b in botones:
+            self.add_item(TicketButton(b["label"], b["categoria_id"], b["tipo"]))
+
+
+class TicketButton(Button):
+    def __init__(self, label, category_id, tipo):
+        super().__init__(label=label, style=discord.ButtonStyle.green)
+        self.category_id = category_id
+        self.tipo = tipo
+
+    async def callback(self, interaction: discord.Interaction):
 
         # anti duplicado
         for ch in interaction.guild.text_channels:
-            if ch.name == f"ticket-{interaction.user.id}":
+            if str(interaction.user.id) in ch.name:
                 return await interaction.response.send_message(
-                    "❌ Ya tienes ticket", ephemeral=True
+                    "❌ Ya tienes un ticket abierto", ephemeral=True
                 )
 
         category = interaction.guild.get_channel(self.category_id)
 
+        numero = get_ticket_number(self.tipo)
+        nombre = f"{self.tipo}-{numero}"
+
         channel = await interaction.guild.create_text_channel(
-            name=f"ticket-{interaction.user.name}",
+            name=nombre,
             category=category
         )
 
