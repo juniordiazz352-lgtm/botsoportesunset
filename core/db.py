@@ -10,7 +10,6 @@ def load():
         return {
             "tickets": {},
             "forms": {},
-            "panels": {"tickets": [], "forms": []},
             "responses": []
         }
 
@@ -18,15 +17,30 @@ def save(data):
     with open(DB, "w") as f:
         json.dump(data, f, indent=4)
 
-# FORM BUILDER
+# TICKETS
+def create_ticket(channel, user):
+    data = load()
+    data["tickets"][str(channel)] = {
+        "user": user,
+        "status": "open"
+    }
+    save(data)
+
+def close_ticket(channel):
+    data = load()
+    if str(channel) in data["tickets"]:
+        data["tickets"][str(channel)]["status"] = "closed"
+        save(data)
+
+# FORMULARIOS
 def create_form(name):
     data = load()
     data["forms"][name] = []
     save(data)
 
-def add_question(form, question):
+def add_question(form, q):
     data = load()
-    data["forms"][form].append(question)
+    data["forms"][form].append(q)
     save(data)
 
 def get_forms():
