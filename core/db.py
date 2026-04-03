@@ -48,12 +48,19 @@ def get_forms():
 
 def save_response(user, form, answers):
     data = load()
+
+    form_id = len(data["responses"]) + 1
+
     data["responses"].append({
+        "id": form_id,
         "user": user,
         "form": form,
-        "answers": answers
+        "answers": answers,
+        "status": "pending"
     })
+
     save(data)
+    return form_id
 
 def update_form_status(form_id, status):
     data = load()
