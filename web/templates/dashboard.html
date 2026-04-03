@@ -1,1 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+<style>
+body{background:#0f172a;color:white;font-family:sans-serif}
+.box{background:#1e293b;padding:15px;margin:10px;border-radius:10px}
+input,button{margin-top:5px;padding:5px}
+</style>
+</head>
 
+<body>
+
+<h1>⚙️ Panel PRO</h1>
+
+<div class="box">
+<h2>Crear Formulario</h2>
+<input id="fname" placeholder="Nombre">
+<button onclick="createForm()">Crear</button>
+</div>
+
+<div class="box">
+<h2>Añadir Pregunta</h2>
+<input id="form" placeholder="Formulario">
+<input id="q" placeholder="Pregunta">
+<button onclick="addQ()">Agregar</button>
+</div>
+
+<script>
+async function createForm(){
+ let name=document.getElementById("fname").value
+ await fetch(`/create_form/${name}`,{method:"POST"})
+ alert("Creado")
+}
+
+async function addQ(){
+ let f=document.getElementById("form").value
+ let q=document.getElementById("q").value
+ await fetch(`/add_question/${f}?q=${q}`,{method:"POST"})
+ alert("Pregunta añadida")
+}
+</script>
+
+</body>
+</html>
