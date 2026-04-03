@@ -4,6 +4,9 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from bot.main import bot
 from core.config import TOKEN
+import discord
+from bot.views.ticket_panel import TicketPanel
+from bot.main import bot
 
 app = FastAPI()
 
@@ -23,6 +26,42 @@ def home():
 
     except Exception as e:
         return JSONResponse({"error": str(e)})
+
+from fastapi import Request
+from core.db import save_panel, get_panels
+import asyncio
+
+# CREAR PANEL DESDE WEB
+@app.post("/create_panel")
+async def create_panel(request: Request):
+    data = await request.json()
+
+    channel_id = int(data["channel_id"])
+    title = data["title"]
+    description = data["description"]
+    botones = data["botones"]
+
+    channel = bot.get_channel(channel_id)
+
+    embed = discord.Embed(
+        title=title,
+        description=description
+    )
+
+    msg = await channel.send(
+        embed=embed,
+        view=TicketPanel(botones)
+    )
+
+    save_panel(channel_id, msg.id, botones)
+
+    return {"ok": True}
+
+
+# OBTENER PANELES
+@app.get("/panels")
+def panels():
+    return get_panels()
 
 # ===== BOT THREAD =====
 import threading
