@@ -54,3 +54,11 @@ def save_response(user, form, answers):
         "answers": answers
     })
     save(data)
+
+def update_form_status(form_id, status):
+    data = load()
+    if "responses" in data:
+        for f in data["responses"]:
+            if str(f["id"]) == str(form_id):
+                f["status"] = status
+    save(data)
