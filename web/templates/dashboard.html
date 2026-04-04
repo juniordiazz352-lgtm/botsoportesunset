@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <style>
 body{display:flex;background:#0b0f1a;color:white;font-family:sans-serif}
-.servers{width:80px;background:#020617;height:100vh;padding:10px}
+.servers{width:200px;background:#020617;height:100vh;padding:10px}
 .server{background:#1f2937;margin:5px;padding:10px;cursor:pointer}
 .main{flex:1;padding:20px}
 .card{background:#1f2937;padding:20px;border-radius:10px}
@@ -16,7 +16,6 @@ button{padding:10px;margin:5px;background:#6366f1;color:white;border:none}
 <body>
 
 <div class="servers" id="servers"></div>
-
 <div class="main" id="main">
 <h1>💀 Dashboard</h1>
 <button onclick="login()">Login</button>
@@ -25,14 +24,13 @@ button{padding:10px;margin:5px;background:#6366f1;color:white;border:none}
 <script>
 
 let guilds=[]
-let selectedGuild=null
 let botones=[]
+let categories=[]
 
 function login(){
   window.location.href="/login"
 }
 
-// CARGAR USER
 async function load(){
   let res = await fetch("/me")
   let data = await res.json()
@@ -53,23 +51,32 @@ function renderGuilds(){
 }
 
 async function selectGuild(id){
-  selectedGuild=id
 
-  let res = await fetch("/channels/"+id)
-  let channels = await res.json()
+  let ch = await fetch("/channels/"+id)
+  let channels = await ch.json()
 
-  let options=""
+  let cat = await fetch("/categories/"+id)
+  categories = await cat.json()
+
+  let optionsCh=""
   channels.forEach(c=>{
-    options += `<option value="${c.id}">${c.name}</option>`
+    optionsCh += `<option value="${c.id}">${c.name}</option>`
+  })
+
+  let optionsCat=""
+  categories.forEach(c=>{
+    optionsCat += `<option value="${c.id}">${c.name}</option>`
   })
 
   document.getElementById("main").innerHTML=`
   <div class="card">
     <h2>Crear Panel</h2>
 
-    <select id="channel">${options}</select>
+    <select id="channel">${optionsCh}</select>
     <input id="title" placeholder="Título">
     <input id="desc" placeholder="Descripción">
+
+    <select id="category">${optionsCat}</select>
 
     <div id="botones"></div>
 
@@ -81,13 +88,16 @@ async function selectGuild(id){
 
 function addBtn(){
   let label=prompt("Nombre botón")
-  let cat=prompt("ID categoría")
+
+  let catSelect = document.getElementById("category").value
 
   botones.push({
     label:label,
-    categoria_id:parseInt(cat),
+    categoria_id:parseInt(catSelect),
     tipo:label.toLowerCase().replace(/ /g,"-")
   })
+
+  alert("Botón añadido")
 }
 
 async function crear(){
