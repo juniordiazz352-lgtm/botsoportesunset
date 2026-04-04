@@ -1,25 +1,46 @@
 import os
-import requests
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from core.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
-from core.db import save_user, save_guilds, get_user_guilds
-from core.db import update_panel, get_panel
-import discord
+import threading
 import asyncio
-from bot.views.ticket_panel import TicketPanel
+import requests
+import discord
 
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+
+from bot.main import bot, setup_bot
+from bot.views.ticket_panel import TicketPanel
+from core.config import TOKEN, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
+from core.db import save_panel, get_panels
+
+# =========================
+# APP
+# =========================
 app = FastAPI()
 
+# =========================
+# PATH DASHBOARD
+# =========================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATE_PATH = os.path.join(BASE_DIR, "web", "templates", "dashboard.html")
 
-# HOME
+# =========================
+# DASHBOARD HOME
+# =========================
 @app.get("/")
 def home():
-    return HTMLResponse(open(TEMPLATE_PATH).read())
+    try:
+        if not os.path.exists(TEMPLATE_PATH):
+            return JSONResponse({"error": "dashboard.html no encontrado"})
 
-# LOGIN
+        with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
+
+# =========================
+# LOGIN DISCORD
+# =========================
 @app.get("/login")
 def login():
     url = (
@@ -31,121 +52,107 @@ def login():
     )
     return RedirectResponse(url)
 
-# CALLBACK
+# =========================
+# CALLBACK DISCORD
+# =========================
 @app.get("/callback")
 def callback(code: str):
+    try:
+        data = {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": REDIRECT_URI
+        }
 
-    data = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": REDIRECT_URI
-    }
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        token = requests.post(
+            "https://discord.com/api/oauth2/token",
+            data=data,
+            headers=headers
+        ).json()
 
-    token = requests.post(
-        "https://discord.com/api/oauth2/token",
-        data=data,
-        headers=headers
-    ).json()
+        access_token = token.get("access_token")
 
-    access_token = token["access_token"]
+        user = requests.get(
+            "https://discord.com/api/users/@me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        ).json()
 
-    user = requests.get(
-        "https://discord.com/api/users/@me",
-        headers={"Authorization": f"Bearer {access_token}"}
-    ).json()
+        guilds = requests.get(
+            "https://discord.com/api/users/@me/guilds",
+            headers={"Authorization": f"Bearer {access_token}"}
+        ).json()
 
-    # 💀 SOLO TU PUEDES ENTRAR
-    if user["id"] != OWNER_ID:
-        return {"error": "No autorizado"}
+        return {
+            "user": user,
+            "guilds": guilds,
+            "token": access_token
+        }
 
-    response = RedirectResponse("/dashboard")
-    response.set_cookie("user_id", user["id"])
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
 
-    return response
-# DASHBOARD PROTEGIDO
-@app.get("/dashboard")
-def dashboard(request: Request):
-    user_id = request.cookies.get("user_id")
-
-    if not user_id:
-        return RedirectResponse("/login")
-
-    return HTMLResponse(open(TEMPLATE_PATH).read())
-
-# GUILDS DEL USUARIO
-@app.get("/guilds")
-def guilds(request: Request):
-    user_id = request.cookies.get("user_id")
-
-    if not user_id:
-        return JSONResponse({"error": "no auth"})
-
-    return get_user_guilds(user_id)
-
-@app.get("/guilds")
-def guilds():
-    return [{"id": GUILD_ID, "name": "Mi servidor"}]
-
+# =========================
+# CREAR PANEL (WEB → DISCORD)
+# =========================
 @app.post("/create_panel")
 async def create_panel(request: Request):
-    data = await request.json()
-    save_panel(channel.id, msg.id, data["botones"])
+    try:
+        data = await request.json()
 
-    channel = bot.get_channel(int(data["channel_id"]))
+        channel_id = int(data["channel_id"])
+        title = data["title"]
+        description = data["description"]
+        botones = data["botones"]
 
-    embed = discord.Embed(
-        title=data["title"],
-        description=data["description"]
-    )
+        channel = bot.get_channel(channel_id)
 
-    future = asyncio.run_coroutine_threadsafe(
-        channel.send(embed=embed, view=TicketPanel(data["botones"])),
-        bot.loop
-    )
+        if not channel:
+            return JSONResponse({"error": "Canal no encontrado"})
 
-    msg = future.result()
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=discord.Color.blurple()
+        )
 
-    save_panel(channel.id, msg.id, data["botones"])
+        future = asyncio.run_coroutine_threadsafe(
+            channel.send(embed=embed, view=TicketPanel(botones)),
+            bot.loop
+        )
 
-    return {"ok": True}
+        msg = future.result()
 
-@app.get("/panel/{panel_id}")
-def get_panel_api(panel_id: int):
-    return get_panel(panel_id)
+        save_panel(channel_id, msg.id, botones)
 
-@app.put("/edit_panel/{panel_id}")
-async def edit_panel(panel_id: int, request: Request):
+        return {"ok": True, "message_id": msg.id}
 
-    data = await request.json()
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
 
-    # 💀 obtener panel de DB
-    panel = get_panel(panel_id)
+# =========================
+# OBTENER PANELES
+# =========================
+@app.get("/panels")
+def panels():
+    try:
+        return get_panels()
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
 
-    channel = bot.get_channel(int(panel["channel_id"]))
+# =========================
+# BOT THREAD
+# =========================
+def run_bot():
+    async def start():
+        await setup_bot()
+        await bot.start(TOKEN)
 
-    message = await channel.fetch_message(int(panel["message_id"]))
+    asyncio.run(start())
 
-    embed = discord.Embed(
-        title=data["title"],
-        description=data["description"]
-    )
-
-    # 💀 editar mensaje EN DISCORD
-    future = asyncio.run_coroutine_threadsafe(
-        message.edit(
-            embed=embed,
-            view=TicketPanel(data["botones"])
-        ),
-        bot.loop
-    )
-
-    future.result()
-
-    # 💀 guardar cambios
-    update_panel(panel_id, data)
-
-    return {"ok": True}
+threading.Thread(target=run_bot, daemon=True).start()
