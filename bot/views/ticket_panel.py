@@ -1,56 +1,63 @@
 import discord
-from discord.ui import View, Button
-from core.db import create_ticket, get_ticket_number
-from bot.views.ticket_controls import TicketControls
 
-class TicketPanel(View):
+class TicketPanel(discord.ui.View):
     def __init__(self, botones):
         super().__init__(timeout=None)
 
-        # botones = lista de dicts
-        # [{label, categoria_id, tipo}]
-
         for b in botones:
-            self.add_item(TicketButton(b["label"], b["categoria_id"], b["tipo"]))
+            self.add_item(TicketButton(b))
 
 
-class TicketButton(Button):
-    def __init__(self, label, category_id, tipo):
-       super().__init__(
-    label=label,
-    style=discord.ButtonStyle.green,
-    custom_id=f"ticket_{tipo}"
-)
-        self.category_id = category_id
-        self.tipo = tipo
+class TicketButton(discord.ui.Button):
+    def __init__(self, data):
+        super().__init__(label=data["label"], style=discord.ButtonStyle.primary)
+        self.data = data
 
     async def callback(self, interaction: discord.Interaction):
 
-        # anti duplicado
-        for ch in interaction.guild.text_channels:
-            if str(interaction.user.id) in ch.name:
-                return await interaction.response.send_message(
-                    "❌ Ya tienes un ticket abierto", ephemeral=True
-                )
+        # ===== TICKETS =====
+        if self.data["tipo"] == "ticket":
 
-        category = interaction.guild.get_channel(self.category_id)
+            guild = interaction.guild
+            category = guild.get_channel(self.data["categoria_id"])
 
-        numero = get_ticket_number(self.tipo)
-        nombre = f"{self.tipo}-{numero}"
+            ticket_name = f"{interaction.user.name}-ticket"
 
-        channel = await interaction.guild.create_text_channel(
-            name=nombre,
-            category=category
-        )
+            channel = await guild.create_text_channel(
+                name=ticket_name,
+                category=category
+            )
 
-        create_ticket(channel.id, interaction.user.id)
+            await interaction.response.send_message(
+                f"🎫 Ticket creado: {channel.mention}",
+                ephemeral=True
+            )
 
-        await channel.send(
-            f"{interaction.user.mention}",
-            view=TicketControls()
-        )
+        # ===== FORMULARIOS =====
+        elif self.data["tipo"] == "form":
+
+            modal = FormModal(self.data["form"])
+            await interaction.response.send_modal(modal)
+
+
+# ===== MODAL =====
+class FormModal(discord.ui.Modal):
+    def __init__(self, form_data):
+        super().__init__(title=form_data["title"])
+
+        for q in form_data["questions"]:
+            self.add_item(discord.ui.TextInput(
+                label=q,
+                required=True
+            ))
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        respuestas = [c.value for c in self.children]
 
         await interaction.response.send_message(
-            f"✅ Ticket creado: {channel.mention}",
+            "✅ Formulario enviado correctamente",
             ephemeral=True
         )
+
+        print("RESPUESTAS:", respuestas)
