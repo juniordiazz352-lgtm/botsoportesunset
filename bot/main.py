@@ -15,6 +15,11 @@ async def setup_bot():
             except Exception as e:
                 print(f"❌ Error en {f}: {e}")
 
+
+
+
+bot.add_view(TicketPanel([]))
+
 @bot.event
 async def on_ready():
     print(f"🔥 BOT ONLINE: {bot.user}")
