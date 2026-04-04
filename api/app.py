@@ -5,6 +5,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from core.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from core.db import save_user, save_guilds, get_user_guilds
 from core.db import update_panel, get_panel
+import discord
+import asyncio
+from bot.views.ticket_panel import TicketPanel
 
 app = FastAPI()
 
