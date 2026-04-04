@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from core.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from core.db import save_user, save_guilds, get_user_guilds
+from core.db import update_panel, get_panel
 
 app = FastAPI()
 
@@ -105,5 +106,18 @@ async def create_panel(request: Request):
     msg = future.result()
 
     save_panel(channel.id, msg.id, data["botones"])
+
+    return {"ok": True}
+
+@app.get("/panel/{panel_id}")
+def get_panel_api(panel_id: int):
+    return get_panel(panel_id)
+
+@app.put("/edit_panel/{panel_id}")
+async def edit_panel(panel_id: int, request: Request):
+
+    data = await request.json()
+
+    update_panel(panel_id, data)
 
     return {"ok": True}
