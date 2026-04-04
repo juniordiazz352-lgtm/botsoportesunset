@@ -121,6 +121,17 @@ async def create_panel(request: Request):
 def panels():
     return get_panels()
 
+@app.delete("/panel/{panel_id}")
+def delete_panel_api(panel_id: int):
+    delete_panel(panel_id)
+    return {"ok": True}
+
+@app.put("/panel/{panel_id}")
+async def edit_panel(panel_id: int, request: Request):
+    data = await request.json()
+    update_panel(panel_id, data["botones"])
+    return {"ok": True}
+
 # ================= BOT =================
 def run_bot():
     async def start():
