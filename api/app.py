@@ -195,4 +195,19 @@ def callback(code: str, request: Request):
 
     return RedirectResponse("/")
 
+
+@app.get("/channels/{guild_id}")
+def get_channels(guild_id: int):
+    guild = bot.get_guild(guild_id)
+
+    if not guild:
+        return {"error": "Guild no encontrada"}
+
+    channels = [
+        {"id": c.id, "name": c.name}
+        for c in guild.text_channels
+    ]
+
+    return channels
+
 threading.Thread(target=run_bot).start()
