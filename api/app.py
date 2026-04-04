@@ -93,6 +93,7 @@ def guilds():
 @app.post("/create_panel")
 async def create_panel(request: Request):
     data = await request.json()
+    save_panel(channel.id, msg.id, data["botones"])
 
     channel = bot.get_channel(int(data["channel_id"]))
 
