@@ -1,104 +1,39 @@
-import json
+import sqlite3
 
-DB = "db.json"
+conn = sqlite3.connect("database.db", check_same_thread=False)
+cursor = conn.cursor()
 
-def load():
-    try:
-        with open(DB) as f:
-            return json.load(f)
-    except:
-        return {
-            "tickets": {},
-            "forms": {},
-            "responses": []
-        }
+# TABLA PANELES
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS panels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel_id INTEGER,
+    message_id INTEGER,
+    data TEXT
+)
+""")
 
-def save(data):
-    with open(DB, "w") as f:
-        json.dump(data, f, indent=4)
+conn.commit()
 
-# TICKETS
-def create_ticket(channel, user):
-    data = load()
-    data["tickets"][str(channel)] = {
-        "user": user,
-        "status": "open"
-    }
-    save(data)
+# ===== GUARDAR PANEL =====
+def save_panel(channel_id, message_id, data):
+    cursor.execute(
+        "INSERT INTO panels (channel_id, message_id, data) VALUES (?, ?, ?)",
+        (channel_id, message_id, str(data))
+    )
+    conn.commit()
 
-def close_ticket(channel):
-    data = load()
-    if str(channel) in data["tickets"]:
-        data["tickets"][str(channel)]["status"] = "closed"
-        save(data)
-
-# FORMULARIOS
-def create_form(name):
-    data = load()
-    data["forms"][name] = []
-    save(data)
-
-def add_question(form, q):
-    data = load()
-    data["forms"][form].append(q)
-    save(data)
-
-def get_forms():
-    return load()["forms"]
-
-def save_response(user, form, answers):
-    data = load()
-
-    form_id = len(data["responses"]) + 1
-
-    data["responses"].append({
-        "id": form_id,
-        "user": user,
-        "form": form,
-        "answers": answers,
-        "status": "pending"
-    })
-
-    save(data)
-    return form_id
-
-def update_form_status(form_id, status):
-    data = load()
-    if "responses" in data:
-        for f in data["responses"]:
-            if str(f["id"]) == str(form_id):
-                f["status"] = status
-    save(data)
-
-def get_ticket_number(tipo):
-    data = load()
-
-    if "counters" not in data:
-        data["counters"] = {}
-
-    if tipo not in data["counters"]:
-        data["counters"][tipo] = 0
-
-    data["counters"][tipo] += 1
-    save(data)
-
-    return str(data["counters"][tipo]).zfill(4)
-
-def save_panel(channel_id, message_id, botones):
-    data = load()
-
-    if "panels" not in data:
-        data["panels"] = []
-
-    data["panels"].append({
-        "channel_id": channel_id,
-        "message_id": message_id,
-        "botones": botones
-    })
-
-    save(data)
-
-
+# ===== OBTENER =====
 def get_panels():
-    data = load()
-    return data.get("panels", [])
+    cursor.execute("SELECT * FROM panels")
+    return cursor.fetchall()
+
+# ===== ELIMINAR =====
+def delete_panel(panel_id):
+    cursor.execute("DELETE FROM panels WHERE id=?", (panel_id,))
+    conn.commit()
+
+# ===== ACTUALIZAR =====
+def update_panel(panel_id, data):
+    cursor.execute("UPDATE panels SET data=? WHERE id=?", (str(data), panel_id))
+    conn.commit()
