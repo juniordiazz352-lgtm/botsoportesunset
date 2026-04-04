@@ -2,212 +2,100 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
-
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
-
-body{
-  display:flex;
-  background:#0b0f1a;
-  color:white;
-}
-
-/* SIDEBAR SERVERS */
-.servers{
-  width:80px;
-  background:#020617;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding-top:10px;
-}
-
-.server{
-  width:50px;
-  height:50px;
-  border-radius:50%;
-  background:#1f2937;
-  margin:8px 0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:0.2s;
-}
-
-.server:hover{
-  border-radius:15px;
-  background:#6366f1;
-}
-
-/* SIDEBAR MENU */
-.menu{
-  width:220px;
-  background:#111827;
-  height:100vh;
-  padding:15px;
-}
-
-.menu h2{
-  margin-bottom:20px;
-}
-
-.menu button{
-  width:100%;
-  margin:5px 0;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#1f2937;
-  color:white;
-  cursor:pointer;
-}
-
-.menu button:hover{
-  background:#374151;
-}
-
-/* MAIN */
-.main{
-  flex:1;
-  padding:20px;
-}
-
-/* CARD */
-.card{
-  background:#1f2937;
-  padding:20px;
-  border-radius:12px;
-  margin-bottom:20px;
-}
-
-/* INPUTS */
-input{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border:none;
-  border-radius:8px;
-}
-
-/* BUTTON */
-.btn{
-  background:#6366f1;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  color:white;
-  cursor:pointer;
-}
-
-.btn:hover{
-  background:#4f46e5;
-}
-
-/* BOTONES LIST */
-.boton{
-  background:#374151;
-  padding:8px;
-  margin:5px 0;
-  border-radius:6px;
-}
+body{display:flex;background:#0b0f1a;color:white;font-family:sans-serif}
+.servers{width:80px;background:#020617;height:100vh;padding:10px}
+.server{background:#1f2937;margin:5px;padding:10px;cursor:pointer}
+.main{flex:1;padding:20px}
+.card{background:#1f2937;padding:20px;border-radius:10px}
+select,input{width:100%;margin:5px;padding:8px}
+button{padding:10px;margin:5px;background:#6366f1;color:white;border:none}
 </style>
 </head>
 
 <body>
 
-<!-- SERVERS -->
 <div class="servers" id="servers"></div>
 
-<!-- MENU -->
-<div class="menu">
-  <h2>💀 Panel</h2>
-  <button onclick="login()">Login</button>
-  <button onclick="viewCreate()">Crear Panel</button>
+<div class="main" id="main">
+<h1>💀 Dashboard</h1>
+<button onclick="login()">Login</button>
 </div>
-
-<!-- MAIN -->
-<div class="main" id="main"></div>
 
 <script>
 
-let userGuilds = []
-let selectedGuild = null
-let botones = []
+let guilds=[]
+let selectedGuild=null
+let botones=[]
 
-// LOGIN
 function login(){
   window.location.href="/login"
 }
 
-// RENDER SERVERS
-function renderServers(){
-  let html = ""
-  userGuilds.forEach(g=>{
-    html += `<div class="server" onclick="selectGuild(${g.id})">
-      ${g.name[0]}
-    </div>`
+// CARGAR USER
+async function load(){
+  let res = await fetch("/me")
+  let data = await res.json()
+
+  if(!data.user) return
+
+  guilds = data.guilds.filter(g => (g.permissions & 0x8) === 0x8)
+
+  renderGuilds()
+}
+
+function renderGuilds(){
+  let html=""
+  guilds.forEach(g=>{
+    html += `<div class="server" onclick="selectGuild(${g.id})">${g.name}</div>`
   })
-  document.getElementById("servers").innerHTML = html
+  document.getElementById("servers").innerHTML=html
 }
 
-// SELECT GUILD
-function selectGuild(id){
-  selectedGuild = id
-  viewCreate()
-}
+async function selectGuild(id){
+  selectedGuild=id
 
-// VIEW CREATE PANEL
-function viewCreate(){
-  document.getElementById("main").innerHTML = `
+  let res = await fetch("/channels/"+id)
+  let channels = await res.json()
+
+  let options=""
+  channels.forEach(c=>{
+    options += `<option value="${c.id}">${c.name}</option>`
+  })
+
+  document.getElementById("main").innerHTML=`
   <div class="card">
     <h2>Crear Panel</h2>
 
-    <input id="channel" placeholder="ID Canal">
+    <select id="channel">${options}</select>
     <input id="title" placeholder="Título">
     <input id="desc" placeholder="Descripción">
 
-    <h3>Botones</h3>
     <div id="botones"></div>
 
-    <button class="btn" onclick="addBtn()">➕ Añadir botón</button>
-    <button class="btn" onclick="crear()">🚀 Crear Panel</button>
+    <button onclick="addBtn()">➕ Botón</button>
+    <button onclick="crear()">🚀 Crear</button>
   </div>
   `
 }
 
-// AÑADIR BOTÓN
 function addBtn(){
-  let label = prompt("Nombre botón")
-  let cat = prompt("ID categoría")
+  let label=prompt("Nombre botón")
+  let cat=prompt("ID categoría")
 
   botones.push({
-    label: label,
-    categoria_id: parseInt(cat),
-    tipo: label.toLowerCase().replace(/ /g,"-")
+    label:label,
+    categoria_id:parseInt(cat),
+    tipo:label.toLowerCase().replace(/ /g,"-")
   })
-
-  renderBotones()
 }
 
-// RENDER BOTONES
-function renderBotones(){
-  let html=""
-  botones.forEach(b=>{
-    html += `<div class="boton">${b.label} (${b.tipo})</div>`
-  })
-  document.getElementById("botones").innerHTML = html
-}
-
-// CREAR PANEL
 async function crear(){
   let data={
-    channel_id: document.getElementById("channel").value,
-    title: document.getElementById("title").value,
-    description: document.getElementById("desc").value,
-    botones: botones
+    channel_id:document.getElementById("channel").value,
+    title:document.getElementById("title").value,
+    description:document.getElementById("desc").value,
+    botones:botones
   }
 
   await fetch("/create_panel",{
@@ -219,17 +107,7 @@ async function crear(){
   alert("💀 Panel creado")
 }
 
-// CARGAR DATOS DESPUÉS LOGIN
-async function loadData(){
-  let res = await fetch("/callback")
-  let data = await res.json()
-
-  userGuilds = data.guilds.filter(g => (g.permissions & 0x8) === 0x8)
-
-  renderServers()
-}
-
-// AUTO LOAD (opcional)
+load()
 </script>
 
 </body>
