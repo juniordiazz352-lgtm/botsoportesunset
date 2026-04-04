@@ -2,6 +2,8 @@ import discord
 from core.db import get_ticket_number
 import datetime
 import os
+from core.db import get_ticket_number, add_log
+import os
 
 STAFF_ROLE_ID = 123456789  # ⚠️ CAMBIA ESTO
 
