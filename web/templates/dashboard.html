@@ -1,41 +1,12 @@
-<body>
+<h1>💀 Panel Control</h1>
 
-<h1>💀 SaaS Panel</h1>
-<button onclick="login()">Login</button>
+<button onclick="crearPanel()">Crear Panel</button>
 
-<h2>🌐 Servidores</h2>
-<div id="guilds"></div>
+<h2>Paneles</h2>
+<div id="panels"></div>
 
-<script>
+<h2>Transcripts</h2>
+<div id="transcripts"></div>
 
-function login(){
-  window.location.href="/login"
-}
-
-async function loadGuilds(){
-  let res = await fetch("/guilds")
-  let data = await res.json()
-
-  let html=""
-
-  data.forEach(g=>{
-    html+=`
-    <div>
-      <b>${g[2]}</b>
-      <button onclick="enter('${g[0]}')">Entrar</button>
-    </div>
-    `
-  })
-
-  document.getElementById("guilds").innerHTML=html
-}
-
-function enter(id){
-  alert("Aquí cargarías paneles del server "+id)
-}
-
-loadGuilds()
-
-</script>
-
-</body>
+<h2>Logs</h2>
+<div id="logs"></div>
