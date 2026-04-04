@@ -85,3 +85,25 @@ def guilds(request: Request):
 @app.get("/guilds")
 def guilds():
     return [{"id": GUILD_ID, "name": "Mi servidor"}]
+
+@app.post("/create_panel")
+async def create_panel(request: Request):
+    data = await request.json()
+
+    channel = bot.get_channel(int(data["channel_id"]))
+
+    embed = discord.Embed(
+        title=data["title"],
+        description=data["description"]
+    )
+
+    future = asyncio.run_coroutine_threadsafe(
+        channel.send(embed=embed, view=TicketPanel(data["botones"])),
+        bot.loop
+    )
+
+    msg = future.result()
+
+    save_panel(channel.id, msg.id, data["botones"])
+
+    return {"ok": True}
