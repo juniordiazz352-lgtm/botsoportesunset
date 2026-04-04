@@ -3,151 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <style>
-body{background:#0b0f1a;color:white;font-family:sans-serif}
-#editor{display:flex;gap:20px}
-#panel{background:#1f2937;padding:20px;width:300px;min-height:200px}
-.btn{background:#6366f1;padding:10px;margin:5px;cursor:grab}
-.toolbox{background:#111827;padding:10px;width:200px}
+body{margin:0;display:flex;font-family:sans-serif;background:#0b0f1a;color:white}
+.sidebar{width:220px;background:#020617;height:100vh;padding:10px}
+.sidebar h2{color:#6366f1}
+.menu div{padding:10px;margin:5px;background:#1f2937;cursor:pointer}
+.main{flex:1;padding:20px}
+.card{background:#1f2937;padding:15px;margin:10px;border-radius:10px}
+button{padding:8px;margin:5px;background:#6366f1;color:white;border:none}
 </style>
 </head>
 
 <body>
 
-<h1>💀 Editor Visual</h1>
-
-<div id="editor">
-
-<div class="toolbox">
-<h3>Elementos</h3>
-<div class="btn" draggable="true" ondragstart="drag(event,'ticket')">🎫 Ticket</div>
-<div class="btn" draggable="true" ondragstart="drag(event,'form')">📋 Formulario</div>
+<div class="sidebar">
+<h2>💀 Panel</h2>
+<div class="menu">
+<div onclick="view('home')">🏠 Inicio</div>
+<div onclick="view('panels')">📦 Paneles</div>
+<div onclick="view('transcripts')">📁 Transcripts</div>
+<div onclick="view('logs')">📜 Logs</div>
+</div>
 </div>
 
-<div id="panel" ondrop="drop(event)" ondragover="allowDrop(event)">
-<h3>Panel</h3>
+<div class="main" id="main">
+<h1>Dashboard</h1>
+<button onclick="login()">Login Discord</button>
 </div>
-
-</div>
-
-<button onclick="guardar()">💾 Guardar</button>
 
 <script>
 
-let elementos=[]
-
-function allowDrop(ev){ev.preventDefault()}
-
-function drag(ev,tipo){
-  ev.dataTransfer.setData("tipo",tipo)
+function login(){
+  window.location.href="/login"
 }
 
-function drop(ev){
-  ev.preventDefault()
+function view(v){
 
-  let tipo=ev.dataTransfer.getData("tipo")
-
-  let label=prompt("Nombre del botón")
-
-  let obj={
-    label:label,
-    tipo:tipo
+  if(v==="home"){
+    document.getElementById("main").innerHTML=`
+    <h1>💀 Panel Admin</h1>
+    <p>Sistema SaaS de Tickets</p>
+    `
   }
 
-  if(tipo=="ticket"){
-    obj.categoria_id=parseInt(prompt("ID categoría"))
+  if(v==="panels"){
+    loadPanels()
   }
 
-  if(tipo=="form"){
-    let title=prompt("Título del formulario")
-    let preguntas=prompt("Preguntas separadas por coma").split(",")
-
-    obj.form={
-      title:title,
-      questions:preguntas
-    }
+  if(v==="transcripts"){
+    loadTranscripts()
   }
 
-  elementos.push(obj)
-
-  render()
+  if(v==="logs"){
+    loadLogs()
+  }
 }
 
-function render(){
-  let html=""
-  elementos.forEach((e,i)=>{
+async function loadPanels(){
+  let res=await fetch("/panels")
+  let data=await res.json()
+
+  let html="<h2>Paneles</h2>"
+
+  data.forEach(p=>{
     html+=`
-    <div class="btn">
-      ${e.label} (${e.tipo})
-      <button onclick="del(${i})">❌</button>
+    <div class="card">
+      <p>ID: ${p[0]}</p>
+      <p>Channel: ${p[1]}</p>
+      <button onclick="delPanel(${p[0]})">🗑</button>
     </div>
     `
   })
-  document.getElementById("panel").innerHTML=html
+
+  document.getElementById("main").innerHTML=html
 }
 
-function del(i){
-  elementos.splice(i,1)
-  render()
+async function delPanel(id){
+  await fetch("/panel/"+id,{method:"DELETE"})
+  loadPanels()
 }
 
-async function guardar(){
+async function loadTranscripts(){
+  let res=await fetch("/transcripts")
+  let data=await res.json()
 
-  let data={
-    channel_id:prompt("ID canal"),
-    title:"Panel",
-    description:"Sistema",
-    botones:elementos
-  }
+  let html="<h2>Transcripts</h2>"
 
-  await fetch("/create_panel",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
+  data.forEach(f=>{
+    html+=`
+    <div class="card">
+      <a href="/transcript/${f}" target="_blank">${f}</a>
+    </div>
+    `
   })
 
-  alert("💀 Guardado")
+  document.getElementById("main").innerHTML=html
+}
+
+async function loadLogs(){
+  let res=await fetch("/logs")
+  let data=await res.json()
+
+  let html="<h2>Logs</h2>"
+
+  data.forEach(l=>{
+    html+=`
+    <div class="card">
+      <p>${l[1]} - ${l[2]} - ${l[3]} - ${l[4]}</p>
+    </div>
+    `
+  })
+
+  document.getElementById("main").innerHTML=html
 }
 
 </script>
 
 </body>
 </html>
-
-<h2>📁 Transcripts</h2>
-<div id="transcripts"></div>
-
-<h2>📜 Logs</h2>
-<div id="logs"></div>
-
-<script>
-
-async function loadTranscripts(){
-  let res = await fetch("/transcripts")
-  let data = await res.json()
-
-  let html=""
-
-  data.forEach(f=>{
-    html += `<p><a href="/transcript/${f}" target="_blank">${f}</a></p>`
-  })
-
-  document.getElementById("transcripts").innerHTML = html
-}
-
-async function loadLogs(){
-  let res = await fetch("/logs")
-  let data = await res.json()
-
-  let html=""
-
-  data.forEach(l=>{
-    html += `<p>${l[1]} - ${l[2]} - ${l[3]} - ${l[4]}</p>`
-  })
-
-  document.getElementById("logs").innerHTML = html
-}
-
-loadTranscripts()
-loadLogs()
-
-</script>
