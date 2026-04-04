@@ -54,20 +54,14 @@ def callback(code: str):
         headers={"Authorization": f"Bearer {access_token}"}
     ).json()
 
-    guilds = requests.get(
-        "https://discord.com/api/users/@me/guilds",
-        headers={"Authorization": f"Bearer {access_token}"}
-    ).json()
+    # 💀 SOLO TU PUEDES ENTRAR
+    if user["id"] != OWNER_ID:
+        return {"error": "No autorizado"}
 
-    # 💀 GUARDAR
-    save_user(user["id"], user["username"], user["avatar"])
-    save_guilds(user["id"], guilds)
-
-    response = RedirectResponse(url="/dashboard")
+    response = RedirectResponse("/dashboard")
     response.set_cookie("user_id", user["id"])
 
     return response
-
 # DASHBOARD PROTEGIDO
 @app.get("/dashboard")
 def dashboard(request: Request):
