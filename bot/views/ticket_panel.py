@@ -116,3 +116,23 @@ class FormModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.send_message("✅ Form enviado", ephemeral=True)
+
+
+class TicketPanel(discord.ui.View):
+    def __init__(self, botones):
+        super().__init__(timeout=None)
+
+        for b in botones:
+            self.add_item(TicketButton(b))
+
+
+class TicketButton(discord.ui.Button):
+    def __init__(self, data):
+        super().__init__(
+            label=data["label"],
+            style=discord.ButtonStyle.primary
+        )
+        self.categoria_id = int(data["categoria_id"])
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_message("Ticket creado", ephemeral=True)
