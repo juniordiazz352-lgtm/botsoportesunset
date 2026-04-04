@@ -112,3 +112,42 @@ async function guardar(){
 
 </body>
 </html>
+
+<h2>📁 Transcripts</h2>
+<div id="transcripts"></div>
+
+<h2>📜 Logs</h2>
+<div id="logs"></div>
+
+<script>
+
+async function loadTranscripts(){
+  let res = await fetch("/transcripts")
+  let data = await res.json()
+
+  let html=""
+
+  data.forEach(f=>{
+    html += `<p><a href="/transcript/${f}" target="_blank">${f}</a></p>`
+  })
+
+  document.getElementById("transcripts").innerHTML = html
+}
+
+async function loadLogs(){
+  let res = await fetch("/logs")
+  let data = await res.json()
+
+  let html=""
+
+  data.forEach(l=>{
+    html += `<p>${l[1]} - ${l[2]} - ${l[3]} - ${l[4]}</p>`
+  })
+
+  document.getElementById("logs").innerHTML = html
+}
+
+loadTranscripts()
+loadLogs()
+
+</script>
