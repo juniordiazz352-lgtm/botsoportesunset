@@ -1,12 +1,238 @@
-<h1>💀 Panel Control</h1>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
 
-<button onclick="crearPanel()">Crear Panel</button>
+<style>
+body{
+  margin:0;
+  display:flex;
+  font-family:sans-serif;
+  background:#313338;
+  color:white;
+}
 
-<h2>Paneles</h2>
-<div id="panels"></div>
+.sidebar{
+  width:220px;
+  background:#1e1f22;
+  height:100vh;
+  padding:10px;
+}
 
-<h2>Transcripts</h2>
-<div id="transcripts"></div>
+.sidebar h2{
+  color:#5865f2;
+}
 
-<h2>Logs</h2>
-<div id="logs"></div>
+.menu div{
+  padding:10px;
+  margin:5px;
+  background:#2b2d31;
+  cursor:pointer;
+  border-radius:5px;
+}
+
+.menu div:hover{
+  background:#404249;
+}
+
+.main{
+  flex:1;
+  padding:20px;
+}
+
+.card{
+  background:#2b2d31;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+input, textarea{
+  width:100%;
+  margin:5px 0;
+  padding:8px;
+  background:#1e1f22;
+  border:none;
+  color:white;
+}
+
+button{
+  padding:8px;
+  background:#5865f2;
+  color:white;
+  border:none;
+  margin-top:5px;
+  cursor:pointer;
+}
+
+.preview{
+  border:1px dashed gray;
+  padding:10px;
+  margin-top:10px;
+}
+
+.btn-preview{
+  background:#5865f2;
+  padding:5px 10px;
+  margin:5px;
+  display:inline-block;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<h2>💀 Panel</h2>
+
+<div class="menu">
+<div onclick="view('editor')">🎨 Editor</div>
+<div onclick="view('panels')">📦 Paneles</div>
+<div onclick="view('logs')">📜 Logs</div>
+<div onclick="view('transcripts')">📁 Transcripts</div>
+</div>
+
+</div>
+
+<div class="main" id="main">
+<h1>💀 Dashboard</h1>
+</div>
+
+<script>
+
+let botones = []
+
+function view(v){
+
+  if(v==="editor"){
+    editorUI()
+  }
+
+  if(v==="panels"){
+    loadPanels()
+  }
+
+  if(v==="logs"){
+    loadLogs()
+  }
+
+  if(v==="transcripts"){
+    loadTranscripts()
+  }
+
+}
+
+function editorUI(){
+
+document.getElementById("main").innerHTML=`
+
+<h2>🎨 Editor de Panel</h2>
+
+<div class="card">
+<input id="title" placeholder="Título">
+<textarea id="desc" placeholder="Descripción"></textarea>
+
+<h3>Agregar botón</h3>
+<input id="btn_text" placeholder="Texto botón">
+<input id="btn_categoria" placeholder="ID Categoría">
+
+<button onclick="addBtn()">➕ Agregar botón</button>
+
+<div class="preview" id="preview"></div>
+
+<button onclick="createPanel()">💾 Crear Panel</button>
+</div>
+`
+
+renderPreview()
+}
+
+function addBtn(){
+
+  let text=document.getElementById("btn_text").value
+  let cat=document.getElementById("btn_categoria").value
+
+  botones.push({
+    label:text,
+    categoria_id:cat
+  })
+
+  renderPreview()
+}
+
+function renderPreview(){
+
+  let html=""
+
+  botones.forEach(b=>{
+    html+=`<span class="btn-preview">${b.label}</span>`
+  })
+
+  let p=document.getElementById("preview")
+  if(p) p.innerHTML=html
+}
+
+async function createPanel(){
+
+  let title=document.getElementById("title").value
+  let desc=document.getElementById("desc").value
+
+  let channel_id=prompt("ID del canal")
+
+  await fetch("/create_panel",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      title:title,
+      description:desc,
+      channel_id:channel_id,
+      botones:botones
+    })
+  })
+
+  alert("Panel creado 💀")
+}
+
+async function loadPanels(){
+  let res=await fetch("/panels")
+  let data=await res.json()
+
+  let html="<h2>Paneles</h2>"
+
+  data.forEach(p=>{
+    html+=`<div class="card">Panel ID ${p[0]}</div>`
+  })
+
+  document.getElementById("main").innerHTML=html
+}
+
+async function loadLogs(){
+  let res=await fetch("/logs")
+  let data=await res.json()
+
+  let html="<h2>Logs</h2>"
+
+  data.forEach(l=>{
+    html+=`<div class="card">${l[1]} - ${l[2]}</div>`
+  })
+
+  document.getElementById("main").innerHTML=html
+}
+
+async function loadTranscripts(){
+  let res=await fetch("/transcripts")
+  let data=await res.json()
+
+  let html="<h2>Transcripts</h2>"
+
+  data.forEach(t=>{
+    html+=`<div class="card"><a href="/transcript/${t}" target="_blank">${t}</a></div>`
+  })
+
+  document.getElementById("main").innerHTML=html
+}
+
+</script>
+
+</body>
+</html>
