@@ -85,9 +85,7 @@ def get_panel(panel_id):
         "id": row[0],
         "channel_id": row[1],
         "message_id": row[2],
-        "botones": json.loads(row[3]),
-        "title": "Panel",
-        "description": "Editado"
+        "botones": json.loads(row[3])
     }
 
 def update_panel(panel_id, data):
