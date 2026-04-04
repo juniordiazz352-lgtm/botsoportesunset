@@ -75,3 +75,23 @@ def save_panel(channel_id, message_id, data):
 def get_panels():
     cursor.execute("SELECT * FROM panels")
     return cursor.fetchall()
+
+def get_panel(panel_id):
+    cursor.execute("SELECT * FROM panels WHERE id=?", (panel_id,))
+    row = cursor.fetchone()
+
+    return {
+        "id": row[0],
+        "channel_id": row[1],
+        "message_id": row[2],
+        "botones": json.loads(row[3]),
+        "title": "Panel",
+        "description": "Editado"
+    }
+
+def update_panel(panel_id, data):
+    cursor.execute(
+        "UPDATE panels SET data=? WHERE id=?",
+        (json.dumps(data["botones"]), panel_id)
+    )
+    conn.commit()
