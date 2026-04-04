@@ -3,109 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <style>
-body{display:flex;background:#0b0f1a;color:white;font-family:sans-serif}
-.servers{width:200px;background:#020617;height:100vh;padding:10px}
-.server{background:#1f2937;margin:5px;padding:10px;cursor:pointer}
-.main{flex:1;padding:20px}
-.card{background:#1f2937;padding:20px;border-radius:10px}
-select,input{width:100%;margin:5px;padding:8px}
-button{padding:10px;margin:5px;background:#6366f1;color:white;border:none}
+body{background:#0b0f1a;color:white;font-family:sans-serif}
+#editor{display:flex;gap:20px}
+#panel{background:#1f2937;padding:20px;width:300px;min-height:200px}
+.btn{background:#6366f1;padding:10px;margin:5px;cursor:grab}
+.toolbox{background:#111827;padding:10px;width:200px}
 </style>
 </head>
 
 <body>
 
-<div class="servers" id="servers"></div>
-<div class="main" id="main">
-<h1>💀 Dashboard</h1>
-<button onclick="login()">Login</button>
+<h1>💀 Editor Visual</h1>
+
+<div id="editor">
+
+<div class="toolbox">
+<h3>Elementos</h3>
+<div class="btn" draggable="true" ondragstart="drag(event,'ticket')">🎫 Ticket</div>
+<div class="btn" draggable="true" ondragstart="drag(event,'form')">📋 Formulario</div>
 </div>
+
+<div id="panel" ondrop="drop(event)" ondragover="allowDrop(event)">
+<h3>Panel</h3>
+</div>
+
+</div>
+
+<button onclick="guardar()">💾 Guardar</button>
 
 <script>
 
-let guilds=[]
-let botones=[]
-let categories=[]
+let elementos=[]
 
-function login(){
-  window.location.href="/login"
+function allowDrop(ev){ev.preventDefault()}
+
+function drag(ev,tipo){
+  ev.dataTransfer.setData("tipo",tipo)
 }
 
-async function load(){
-  let res = await fetch("/me")
-  let data = await res.json()
+function drop(ev){
+  ev.preventDefault()
 
-  if(!data.user) return
+  let tipo=ev.dataTransfer.getData("tipo")
 
-  guilds = data.guilds.filter(g => (g.permissions & 0x8) === 0x8)
+  let label=prompt("Nombre del botón")
 
-  renderGuilds()
-}
-
-function renderGuilds(){
-  let html=""
-  guilds.forEach(g=>{
-    html += `<div class="server" onclick="selectGuild(${g.id})">${g.name}</div>`
-  })
-  document.getElementById("servers").innerHTML=html
-}
-
-async function selectGuild(id){
-
-  let ch = await fetch("/channels/"+id)
-  let channels = await ch.json()
-
-  let cat = await fetch("/categories/"+id)
-  categories = await cat.json()
-
-  let optionsCh=""
-  channels.forEach(c=>{
-    optionsCh += `<option value="${c.id}">${c.name}</option>`
-  })
-
-  let optionsCat=""
-  categories.forEach(c=>{
-    optionsCat += `<option value="${c.id}">${c.name}</option>`
-  })
-
-  document.getElementById("main").innerHTML=`
-  <div class="card">
-    <h2>Crear Panel</h2>
-
-    <select id="channel">${optionsCh}</select>
-    <input id="title" placeholder="Título">
-    <input id="desc" placeholder="Descripción">
-
-    <select id="category">${optionsCat}</select>
-
-    <div id="botones"></div>
-
-    <button onclick="addBtn()">➕ Botón</button>
-    <button onclick="crear()">🚀 Crear</button>
-  </div>
-  `
-}
-
-function addBtn(){
-  let label=prompt("Nombre botón")
-
-  let catSelect = document.getElementById("category").value
-
-  botones.push({
+  let obj={
     label:label,
-    categoria_id:parseInt(catSelect),
-    tipo:label.toLowerCase().replace(/ /g,"-")
-  })
+    tipo:tipo
+  }
 
-  alert("Botón añadido")
+  if(tipo=="ticket"){
+    obj.categoria_id=parseInt(prompt("ID categoría"))
+  }
+
+  if(tipo=="form"){
+    let title=prompt("Título del formulario")
+    let preguntas=prompt("Preguntas separadas por coma").split(",")
+
+    obj.form={
+      title:title,
+      questions:preguntas
+    }
+  }
+
+  elementos.push(obj)
+
+  render()
 }
 
-async function crear(){
+function render(){
+  let html=""
+  elementos.forEach((e,i)=>{
+    html+=`
+    <div class="btn">
+      ${e.label} (${e.tipo})
+      <button onclick="del(${i})">❌</button>
+    </div>
+    `
+  })
+  document.getElementById("panel").innerHTML=html
+}
+
+function del(i){
+  elementos.splice(i,1)
+  render()
+}
+
+async function guardar(){
+
   let data={
-    channel_id:document.getElementById("channel").value,
-    title:document.getElementById("title").value,
-    description:document.getElementById("desc").value,
-    botones:botones
+    channel_id:prompt("ID canal"),
+    title:"Panel",
+    description:"Sistema",
+    botones:elementos
   }
 
   await fetch("/create_panel",{
@@ -114,65 +105,10 @@ async function crear(){
     body:JSON.stringify(data)
   })
 
-  alert("💀 Panel creado")
+  alert("💀 Guardado")
 }
 
-load()
 </script>
 
 </body>
 </html>
-
-<h2>Paneles creados</h2>
-<div id="paneles"></div>
-
-<script>
-
-async function cargarPaneles(){
-  let res = await fetch("/panels")
-  let data = await res.json()
-
-  let html=""
-
-  data.forEach(p=>{
-    html += `
-    <div class="card">
-      <p>ID: ${p[0]}</p>
-      <p>Channel: ${p[1]}</p>
-
-      <button onclick="eliminar(${p[0]})">🗑 Eliminar</button>
-      <button onclick="editar(${p[0]})">✏ Editar</button>
-    </div>
-    `
-  })
-
-  document.getElementById("paneles").innerHTML = html
-}
-
-async function eliminar(id){
-  await fetch("/panel/"+id,{method:"DELETE"})
-  alert("Eliminado")
-  cargarPaneles()
-}
-
-async function editar(id){
-  let nuevo = prompt("Nuevo nombre botón")
-
-  let data = {
-    botones:[
-      {label:nuevo, categoria_id:123, tipo:"editado"}
-    ]
-  }
-
-  await fetch("/panel/"+id,{
-    method:"PUT",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
-  })
-
-  alert("Editado")
-}
-
-cargarPaneles()
-
-</script>
