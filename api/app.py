@@ -20,7 +20,7 @@ from core.db import save_panel, get_panels
 # =========================
 app = FastAPI()
 
-
+print("🔥 APP INICIANDO...")
 # =========================
 # PATHS
 # =========================
