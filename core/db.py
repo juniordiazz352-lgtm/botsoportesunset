@@ -1,10 +1,11 @@
 import sqlite3
 import json
+import datetime
 
 conn = sqlite3.connect("database.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# PANELES
+# ===== PANELES =====
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS panels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,11 +15,22 @@ CREATE TABLE IF NOT EXISTS panels (
 )
 """)
 
-# CONTADORES
+# ===== CONTADORES =====
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS counters (
     categoria_id INTEGER PRIMARY KEY,
     count INTEGER
+)
+""")
+
+# ===== LOGS =====
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user TEXT,
+    action TEXT,
+    channel TEXT,
+    date TEXT
 )
 """)
 
@@ -39,6 +51,18 @@ def get_ticket_number(categoria_id):
     conn.commit()
 
     return count
+
+# ===== LOG =====
+def add_log(user, action, channel):
+    cursor.execute(
+        "INSERT INTO logs (user, action, channel, date) VALUES (?, ?, ?, ?)",
+        (user, action, channel, str(datetime.datetime.now()))
+    )
+    conn.commit()
+
+def get_logs():
+    cursor.execute("SELECT * FROM logs ORDER BY id DESC")
+    return cursor.fetchall()
 
 # ===== PANEL =====
 def save_panel(channel_id, message_id, data):
