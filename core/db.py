@@ -20,7 +20,7 @@ conn.commit()
 def save_panel(channel_id, message_id, data):
     cursor.execute(
         "INSERT INTO panels (channel_id, message_id, data) VALUES (?, ?, ?)",
-        (channel_id, message_id, json.dumps(data))
+        (channel_id, message_id, json.dumps(data) json.loads(data))
     )
     conn.commit()
 
@@ -36,5 +36,5 @@ def delete_panel(panel_id):
 
 # ===== ACTUALIZAR =====
 def update_panel(panel_id, data):
-    cursor.execute("UPDATE panels SET data=? WHERE id=?", json.dumps(data), panel_id))
+    cursor.execute("UPDATE panels SET data=? WHERE id=?", json.dumps(data) json.loads(data), panel_id))
     conn.commit()
