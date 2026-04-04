@@ -53,3 +53,5 @@ async def on_ready():
 
         except Exception as e:
             print("❌ Error restaurando panel:", e)
+
+await bot.load_extension("bot.cogs.utilidades")
