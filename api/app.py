@@ -135,6 +135,14 @@ async def edit_panel(panel_id: int, request: Request):
     update_panel(panel_id, data["botones"])
     return {"ok": True}
 
+@app.get("/transcripts")
+def transcripts():
+    if not os.path.exists("transcripts"):
+        return []
+
+    files = os.listdir("transcripts")
+
+    return files
 # ================= BOT =================
 def run_bot():
     async def start():
