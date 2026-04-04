@@ -3,7 +3,9 @@ import threading
 import asyncio
 import requests
 import discord
-
+from fastapi.responses import RedirectResponse
+from fastapi import Request
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
