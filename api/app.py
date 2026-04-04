@@ -145,4 +145,15 @@ def run_bot():
 
     asyncio.run(start())
 
+@app.get("/login")
+def login():
+    url = (
+        "https://discord.com/api/oauth2/authorize"
+        f"?client_id={CLIENT_ID}"
+        "&response_type=code"
+        "&scope=identify guilds"
+        f"&redirect_uri={REDIRECT_URI}"
+    )
+    return RedirectResponse(url)
+
 threading.Thread(target=run_bot).start()
