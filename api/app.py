@@ -7,6 +7,9 @@ from core.db import delete_panel, update_panel
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import FileResponse
+from core.db import get_logs
+import os
 
 from bot.main import bot, setup_bot
 from bot.views.ticket_panel import TicketPanel
