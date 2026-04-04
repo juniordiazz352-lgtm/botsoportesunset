@@ -150,10 +150,12 @@ def panels():
 # =========================
 def run_bot():
     async def start():
-        await setup_bot()
-        await bot.start(TOKEN)
+        try:
+            print("🚀 Iniciando bot...")
+            await setup_bot()
+            print("✅ setup_bot OK")
+            await bot.start(TOKEN)
+        except Exception as e:
+            print("❌ ERROR BOT:", e)
 
     asyncio.run(start())
-
-
-threading.Thread(target=run_bot, daemon=True).start()
