@@ -84,7 +84,7 @@ class TicketControls(discord.ui.View):
 
 
 # ===== TRANSCRIPTS =====
-async def create_transcript(channel):
+async def create_transcript(channel, closed_by):
 
     messages = [msg async for msg in channel.history(limit=100)]
 
@@ -100,6 +100,10 @@ async def create_transcript(channel):
     with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
 
+    # 💀 LOG
+    add_log(str(closed_by), "cerró ticket", channel.name)
+
+    return filename
 
 # ===== FORM =====
 class FormModal(discord.ui.Modal):
