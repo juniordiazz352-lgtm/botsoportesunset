@@ -10,7 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import FileResponse
 from core.db import get_logs
 import os
-
+from core.db import delete_panel
 from bot.main import bot, setup_bot
 from bot.views.ticket_panel import TicketPanel
 from core.config import TOKEN, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
