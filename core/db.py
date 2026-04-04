@@ -4,6 +4,7 @@ import json
 conn = sqlite3.connect("database.db", check_same_thread=False)
 cursor = conn.cursor()
 
+# PANELES
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS panels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13,8 +14,33 @@ CREATE TABLE IF NOT EXISTS panels (
 )
 """)
 
+# CONTADORES
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS counters (
+    categoria_id INTEGER PRIMARY KEY,
+    count INTEGER
+)
+""")
+
 conn.commit()
 
+# ===== CONTADOR =====
+def get_ticket_number(categoria_id):
+    cursor.execute("SELECT count FROM counters WHERE categoria_id=?", (categoria_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        cursor.execute("INSERT INTO counters VALUES (?, ?)", (categoria_id, 1))
+        conn.commit()
+        return 1
+
+    count = row[0] + 1
+    cursor.execute("UPDATE counters SET count=? WHERE categoria_id=?", (count, categoria_id))
+    conn.commit()
+
+    return count
+
+# ===== PANEL =====
 def save_panel(channel_id, message_id, data):
     cursor.execute(
         "INSERT INTO panels (channel_id, message_id, data) VALUES (?, ?, ?)",
@@ -24,26 +50,4 @@ def save_panel(channel_id, message_id, data):
 
 def get_panels():
     cursor.execute("SELECT * FROM panels")
-    rows = cursor.fetchall()
-
-    result = []
-    for r in rows:
-        result.append({
-            "id": r[0],
-            "channel_id": r[1],
-            "message_id": r[2],
-            "data": json.loads(r[3])
-        })
-    return result
-
-def update_panel(panel_id, data):
-    cursor.execute(
-        "UPDATE panels SET data=? WHERE id=?",
-        (json.dumps(data), panel_id)
-    )
-    conn.commit()
-
-def delete_panel(panel_id):
-    cursor.execute("DELETE FROM panels WHERE id=?", (panel_id,))
-    conn.commit()
-
+    return cursor.fetchall()
