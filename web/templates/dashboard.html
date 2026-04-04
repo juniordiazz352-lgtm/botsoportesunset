@@ -1,34 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-body{margin:0;display:flex;font-family:sans-serif;background:#0b0f1a;color:white}
-.sidebar{width:220px;background:#020617;height:100vh;padding:10px}
-.sidebar h2{color:#6366f1}
-.menu div{padding:10px;margin:5px;background:#1f2937;cursor:pointer}
-.main{flex:1;padding:20px}
-.card{background:#1f2937;padding:15px;margin:10px;border-radius:10px}
-button{padding:8px;margin:5px;background:#6366f1;color:white;border:none}
-</style>
-</head>
-
 <body>
 
-<div class="sidebar">
-<h2>💀 Panel</h2>
-<div class="menu">
-<div onclick="view('home')">🏠 Inicio</div>
-<div onclick="view('panels')">📦 Paneles</div>
-<div onclick="view('transcripts')">📁 Transcripts</div>
-<div onclick="view('logs')">📜 Logs</div>
-</div>
-</div>
+<h1>💀 SaaS Panel</h1>
+<button onclick="login()">Login</button>
 
-<div class="main" id="main">
-<h1>Dashboard</h1>
-<button onclick="login()">Login Discord</button>
-</div>
+<h2>🌐 Servidores</h2>
+<div id="guilds"></div>
 
 <script>
 
@@ -36,87 +12,30 @@ function login(){
   window.location.href="/login"
 }
 
-function view(v){
+async function loadGuilds(){
+  let res = await fetch("/guilds")
+  let data = await res.json()
 
-  if(v==="home"){
-    document.getElementById("main").innerHTML=`
-    <h1>💀 Panel Admin</h1>
-    <p>Sistema SaaS de Tickets</p>
-    `
-  }
+  let html=""
 
-  if(v==="panels"){
-    loadPanels()
-  }
-
-  if(v==="transcripts"){
-    loadTranscripts()
-  }
-
-  if(v==="logs"){
-    loadLogs()
-  }
-}
-
-async function loadPanels(){
-  let res=await fetch("/panels")
-  let data=await res.json()
-
-  let html="<h2>Paneles</h2>"
-
-  data.forEach(p=>{
+  data.forEach(g=>{
     html+=`
-    <div class="card">
-      <p>ID: ${p[0]}</p>
-      <p>Channel: ${p[1]}</p>
-      <button onclick="delPanel(${p[0]})">🗑</button>
+    <div>
+      <b>${g[2]}</b>
+      <button onclick="enter('${g[0]}')">Entrar</button>
     </div>
     `
   })
 
-  document.getElementById("main").innerHTML=html
+  document.getElementById("guilds").innerHTML=html
 }
 
-async function delPanel(id){
-  await fetch("/panel/"+id,{method:"DELETE"})
-  loadPanels()
+function enter(id){
+  alert("Aquí cargarías paneles del server "+id)
 }
 
-async function loadTranscripts(){
-  let res=await fetch("/transcripts")
-  let data=await res.json()
-
-  let html="<h2>Transcripts</h2>"
-
-  data.forEach(f=>{
-    html+=`
-    <div class="card">
-      <a href="/transcript/${f}" target="_blank">${f}</a>
-    </div>
-    `
-  })
-
-  document.getElementById("main").innerHTML=html
-}
-
-async function loadLogs(){
-  let res=await fetch("/logs")
-  let data=await res.json()
-
-  let html="<h2>Logs</h2>"
-
-  data.forEach(l=>{
-    html+=`
-    <div class="card">
-      <p>${l[1]} - ${l[2]} - ${l[3]} - ${l[4]}</p>
-    </div>
-    `
-  })
-
-  document.getElementById("main").innerHTML=html
-}
+loadGuilds()
 
 </script>
 
 </body>
-</html>
