@@ -18,7 +18,7 @@ from core.db import save_panel, get_panels
 # APP
 # =========================
 app = FastAPI()
-
+app.add_middleware(SessionMiddleware, secret_key="supersecretkey123")
 # =========================
 # PATH DASHBOARD
 # =========================
