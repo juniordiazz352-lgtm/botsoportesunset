@@ -156,4 +156,43 @@ def login():
     )
     return RedirectResponse(url)
 
+
+@app.get("/callback")
+def callback(code: str, request: Request):
+
+    data = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": REDIRECT_URI
+    }
+
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+    token = requests.post(
+        "https://discord.com/api/oauth2/token",
+        data=data,
+        headers=headers
+    ).json()
+
+    access_token = token["access_token"]
+
+    user = requests.get(
+        "https://discord.com/api/users/@me",
+        headers={"Authorization": f"Bearer {access_token}"}
+    ).json()
+
+    guilds = requests.get(
+        "https://discord.com/api/users/@me/guilds",
+        headers={"Authorization": f"Bearer {access_token}"}
+    ).json()
+
+    # 💀 GUARDAR EN SESIÓN
+    request.session["user"] = user
+    request.session["guilds"] = guilds
+    request.session["token"] = access_token
+
+    return RedirectResponse("/")
+
 threading.Thread(target=run_bot).start()
