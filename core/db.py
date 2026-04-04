@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS panels (
     channel_id INTEGER,
     message_id INTEGER,
     data TEXT
+    id | channel_id | message_id | data
 )
 """)
 
