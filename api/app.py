@@ -3,7 +3,7 @@ import threading
 import asyncio
 import requests
 import discord
-
+from core.db import delete_panel, update_panel
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
