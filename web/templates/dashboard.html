@@ -122,3 +122,57 @@ load()
 
 </body>
 </html>
+
+<h2>Paneles creados</h2>
+<div id="paneles"></div>
+
+<script>
+
+async function cargarPaneles(){
+  let res = await fetch("/panels")
+  let data = await res.json()
+
+  let html=""
+
+  data.forEach(p=>{
+    html += `
+    <div class="card">
+      <p>ID: ${p[0]}</p>
+      <p>Channel: ${p[1]}</p>
+
+      <button onclick="eliminar(${p[0]})">🗑 Eliminar</button>
+      <button onclick="editar(${p[0]})">✏ Editar</button>
+    </div>
+    `
+  })
+
+  document.getElementById("paneles").innerHTML = html
+}
+
+async function eliminar(id){
+  await fetch("/panel/"+id,{method:"DELETE"})
+  alert("Eliminado")
+  cargarPaneles()
+}
+
+async function editar(id){
+  let nuevo = prompt("Nuevo nombre botón")
+
+  let data = {
+    botones:[
+      {label:nuevo, categoria_id:123, tipo:"editado"}
+    ]
+  }
+
+  await fetch("/panel/"+id,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  })
+
+  alert("Editado")
+}
+
+cargarPaneles()
+
+</script>
