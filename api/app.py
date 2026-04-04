@@ -152,6 +152,10 @@ def get_transcript(name: str):
         return {"error": "no existe"}
 
     return FileResponse(path)
+
+@app.get("/logs")
+def logs():
+    return get_logs()
 # ================= BOT =================
 def run_bot():
     async def start():
