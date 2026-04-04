@@ -6,69 +6,61 @@ class Utilidades(commands.Cog):
         self.bot = bot
 
     # =========================
+    # AUTO BORRAR COMANDO
+    # =========================
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+
+    # =========================
     # !say
     # =========================
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def say(self, ctx, *, mensaje):
-        try:
-            await ctx.message.delete()
-        except:
-            pass
-
         await ctx.send(mensaje)
 
     # =========================
-    # !embed básico
+    # !embed
     # =========================
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def embed(self, ctx, *, descripcion):
-        try:
-            await ctx.message.delete()
-        except:
-            pass
-
         embed = discord.Embed(
             title="Soporte SB",
             description=descripcion,
             color=discord.Color.blurple()
         )
-
         await ctx.send(embed=embed)
 
     # =========================
-    # !embedpro (full custom)
+    # !embedpro
     # =========================
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def embedpro(self, ctx, titulo, *, descripcion):
-        try:
-            await ctx.message.delete()
-        except:
-            pass
-
         embed = discord.Embed(
             title=titulo,
             description=descripcion,
             color=discord.Color.blurple()
         )
 
-        embed.set_footer(text=f"Enviado por {ctx.author}", icon_url=ctx.author.display_avatar.url)
+        embed.set_footer(
+            text=f"Enviado por {ctx.author}",
+            icon_url=ctx.author.display_avatar.url
+        )
 
         await ctx.send(embed=embed)
 
     # =========================
-    # !anuncio (con ping rol)
+    # !anuncio
     # =========================
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def anuncio(self, ctx, rol: discord.Role, *, mensaje):
-        try:
-            await ctx.message.delete()
-        except:
-            pass
-
         embed = discord.Embed(
             title="📢 Anuncio Importante",
             description=mensaje,
@@ -80,17 +72,12 @@ class Utilidades(commands.Cog):
         await ctx.send(content=rol.mention, embed=embed)
 
     # =========================
-    # !saypanel (envía panel tickets)
+    # !saypanel
     # =========================
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def saypanel(self, ctx):
         from bot.views.ticket_panel import TicketPanel
-
-        try:
-            await ctx.message.delete()
-        except:
-            pass
 
         botones = [
             {"label": "Soporte", "style": 1, "custom_id": "soporte"},
@@ -99,7 +86,7 @@ class Utilidades(commands.Cog):
 
         embed = discord.Embed(
             title="🎫 Panel de Tickets",
-            description="Selecciona una opción para abrir ticket",
+            description="Selecciona una opción",
             color=discord.Color.blurple()
         )
 
