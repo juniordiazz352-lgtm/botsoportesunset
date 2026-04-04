@@ -5,7 +5,7 @@ import os
 from core.db import get_ticket_number, add_log
 import os
 
-STAFF_ROLE_ID = 123456789  # ⚠️ CAMBIA ESTO
+STAFF_ROLE_ID = 1472478801710678258 # ⚠️ CAMBIA ESTO
 
 class TicketPanel(discord.ui.View):
     def __init__(self, botones):
@@ -64,15 +64,16 @@ class TicketControls(discord.ui.View):
         self.owner_id = owner_id
 
     @discord.ui.button(label="🔒 Cerrar", style=discord.ButtonStyle.danger)
-    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        if not any(r.id == STAFF_ROLE_ID for r in interaction.user.roles):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
+    if not any(r.id == STAFF_ROLE_ID for r in interaction.user.roles):
+        return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
 
-        await create_transcript(interaction.channel)
+    file = await create_transcript(interaction.channel, interaction.user)
 
-        await interaction.response.send_message("🔒 Cerrando...")
-        await interaction.channel.delete()
+    await interaction.response.send_message("📁 Transcript guardado", ephemeral=True)
+
+    await interaction.channel.delete()
 
     @discord.ui.button(label="👤 Reclamar", style=discord.ButtonStyle.secondary)
     async def claim(self, interaction: discord.Interaction, button: discord.ui.Button):
