@@ -143,6 +143,15 @@ def transcripts():
     files = os.listdir("transcripts")
 
     return files
+
+@app.get("/transcript/{name}")
+def get_transcript(name: str):
+    path = f"transcripts/{name}"
+
+    if not os.path.exists(path):
+        return {"error": "no existe"}
+
+    return FileResponse(path)
 # ================= BOT =================
 def run_bot():
     async def start():
