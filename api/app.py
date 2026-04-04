@@ -81,3 +81,7 @@ def guilds(request: Request):
         return JSONResponse({"error": "no auth"})
 
     return get_user_guilds(user_id)
+
+@app.get("/guilds")
+def guilds():
+    return [{"id": GUILD_ID, "name": "Mi servidor"}]
