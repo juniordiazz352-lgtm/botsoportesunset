@@ -121,6 +121,30 @@ async def edit_panel(panel_id: int, request: Request):
 
     data = await request.json()
 
+    # 💀 obtener panel de DB
+    panel = get_panel(panel_id)
+
+    channel = bot.get_channel(int(panel["channel_id"]))
+
+    message = await channel.fetch_message(int(panel["message_id"]))
+
+    embed = discord.Embed(
+        title=data["title"],
+        description=data["description"]
+    )
+
+    # 💀 editar mensaje EN DISCORD
+    future = asyncio.run_coroutine_threadsafe(
+        message.edit(
+            embed=embed,
+            view=TicketPanel(data["botones"])
+        ),
+        bot.loop
+    )
+
+    future.result()
+
+    # 💀 guardar cambios
     update_panel(panel_id, data)
 
     return {"ok": True}
