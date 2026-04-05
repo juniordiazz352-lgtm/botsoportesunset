@@ -47,3 +47,11 @@ CREATE TABLE IF NOT EXISTS config (
 """)
 
 conn.commit()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS tickets (
+    user_id INTEGER,
+    channel_id INTEGER,
+    claimed_by INTEGER
+)
+""")
