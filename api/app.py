@@ -7,46 +7,35 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 import discord
+from discord.ext import commands
 
 from bot.main import bot, setup_bot
 from bot.views.ticket_panel import TicketPanel
-
 from core.config import TOKEN, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from core.db import save_panel, get_panels
 
-
-# =========================
-# APP
-# =========================
 app = FastAPI()
-
-print("🔥 APP INICIANDO...")
-# =========================
-# PATHS
-# =========================
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATE_PATH = os.path.join(BASE_DIR, "web", "templates", "dashboard.html")
-
 
 # =========================
 # DASHBOARD
 # =========================
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATE_PATH = os.path.join(BASE_DIR, "web", "templates", "dashboard.html")
+
 @app.get("/")
 def home():
-    try:
-        if not os.path.exists(TEMPLATE_PATH):
-            return JSONResponse({"error": "dashboard.html no encontrado"})
+    if not os.path.exists(TEMPLATE_PATH):
+        return JSONResponse({"error": "dashboard.html no encontrado"})
 
-        with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
-            return HTMLResponse(f.read())
-
-    except Exception as e:
-        return JSONResponse({"error": str(e)})
+    with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
 
 
 # =========================
 # LOGIN DISCORD
 # =========================
+
 @app.get("/login")
 def login():
     url = (
@@ -81,6 +70,9 @@ def callback(code: str):
 
     access_token = token.get("access_token")
 
+    if not access_token:
+        return {"error": "No se pudo obtener token"}
+
     user = requests.get(
         "https://discord.com/api/users/@me",
         headers={"Authorization": f"Bearer {access_token}"}
@@ -93,69 +85,65 @@ def callback(code: str):
 
     return {
         "user": user,
-        "guilds": guilds,
-        "token": access_token
+        "guilds": guilds
     }
 
 
 # =========================
 # CREAR PANEL
 # =========================
+
 @app.post("/create_panel")
 async def create_panel(request: Request):
-    try:
-        data = await request.json()
+    data = await request.json()
 
-        channel_id = int(data["channel_id"])
-        title = data["title"]
-        description = data["description"]
-        botones = data["botones"]
+    channel_id = int(data["channel_id"])
+    title = data["title"]
+    description = data["description"]
+    botones = data["botones"]
 
-        channel = bot.get_channel(channel_id)
+    channel = bot.get_channel(channel_id)
 
-        if not channel:
-            return JSONResponse({"error": "Canal no encontrado"})
+    if not channel:
+        return {"error": "Canal no encontrado"}
 
-        embed = discord.Embed(
-            title=title,
-            description=description,
-            color=discord.Color.blurple()
-        )
+    embed = discord.Embed(
+        title=title,
+        description=description,
+        color=discord.Color.blue()
+    )
 
-        future = asyncio.run_coroutine_threadsafe(
-            channel.send(embed=embed, view=TicketPanel(botones)),
-            bot.loop
-        )
+    future = asyncio.run_coroutine_threadsafe(
+        channel.send(embed=embed, view=TicketPanel(botones)),
+        bot.loop
+    )
 
-        msg = future.result()
+    msg = future.result()
 
-        save_panel(channel_id, msg.id, botones)
+    save_panel(channel_id, msg.id, botones)
 
-        return {"ok": True, "message_id": msg.id}
-
-    except Exception as e:
-        return JSONResponse({"error": str(e)})
+    return {"ok": True}
 
 
 # =========================
-# OBTENER PANELES
+# PANELES
 # =========================
+
 @app.get("/panels")
 def panels():
     return get_panels()
 
 
 # =========================
-# RUN BOT EN THREAD
+# INICIAR BOT EN THREAD
 # =========================
+
 def run_bot():
     async def start():
-        try:
-            print("🚀 Iniciando bot...")
-            await setup_bot()
-            print("✅ setup_bot OK")
-            await bot.start(TOKEN)
-        except Exception as e:
-            print("❌ ERROR BOT:", e)
+        await setup_bot()
+        await bot.start(TOKEN)
 
     asyncio.run(start())
+
+
+threading.Thread(target=run_bot, daemon=True).start()
