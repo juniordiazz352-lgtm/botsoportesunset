@@ -12,18 +12,12 @@ class Setup(commands.Cog):
     async def setup(self, ctx):
 
         embed = discord.Embed(
-            title="⚙️ Setup del Bot",
-            description=(
-                "Configura el bot usando los botones\n\n"
-                "👮 Rol Staff\n"
-                "📁 Categoría Tickets\n"
-                "📋 Canal Formularios\n"
-                "📝 Canal Logs"
-            ),
+            title="⚙️ Panel de Configuración",
+            description="Usa los botones para configurar o ver el estado",
             color=discord.Color.blurple()
         )
 
-        await ctx.send(embed=embed, view=SetupView(self.bot))
+        await ctx.send(embed=embed, view=SetupView(self.bot, ctx.guild))
 
 
 async def setup(bot):
