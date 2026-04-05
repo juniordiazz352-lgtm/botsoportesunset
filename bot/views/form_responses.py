@@ -16,6 +16,17 @@ class FormResponses(commands.Cog):
         )
         data = cursor.fetchall()
 
+        from bot.core.logger import enviar_log
+
+log = discord.Embed(
+    title="📋 Formulario enviado",
+    color=discord.Color.blue()
+)
+log.add_field(name="Usuario", value=user.mention)
+log.add_field(name="Formulario", value=form_name)
+
+await enviar_log(guild, log)
+
         if not data:
             return await ctx.send("❌ No hay respuestas")
 
