@@ -9,12 +9,13 @@ bot = commands.Bot(
     intents=intents
 )
 
-# 🔥 Cargar cogs correctamente
+# 🔥 Cargar TODOS tus cogs
 async def setup_bot():
     await bot.load_extension("bot.cogs.utilidades")
-    # agrega más cogs acá si tienes
+    await bot.load_extension("bot.cogs.tickets")
+    await bot.load_extension("bot.cogs.forms")
+    await bot.load_extension("bot.cogs.panel_creator")
 
-# 🔥 Esto se ejecuta cuando el bot inicia
 @bot.event
 async def setup_hook():
     await setup_bot()
@@ -23,7 +24,12 @@ async def setup_hook():
 async def on_ready():
     print(f"✅ Bot conectado como {bot.user}")
 
-# 🔥 Iniciar bot
+# 🔥 Ejecutar bot
 def run_bot():
     TOKEN = os.getenv("TOKEN")
-    bot.run(TOKEN)"bot.cogs.utilidades")
+
+    if not TOKEN:
+        print("❌ ERROR: No hay TOKEN")
+        return
+
+    bot.run(TOKEN)
