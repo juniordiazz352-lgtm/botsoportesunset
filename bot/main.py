@@ -16,7 +16,8 @@ async def setup_bot():
     await bot.load_extension("bot.cogs.tickets")
     await bot.load_extension("bot.cogs.panel_creator")  # 🔥 ya lo tienes
     await bot.load_extension("bot.cogs.config")
-
+    await bot.load_extension("bot.cogs.setup")
+    
 @bot.event
 async def on_ready():
     print(f"✅ Bot conectado como {bot.user}")
