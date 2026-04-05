@@ -1,6 +1,7 @@
 import discord
 from core.db import cursor
 
+
 def es_staff(member, guild):
     cursor.execute("SELECT valor FROM config WHERE clave='staff_role'")
     data = cursor.fetchone()
@@ -16,14 +17,6 @@ class ReviewView(discord.ui.View):
         self.user = user
         self.form = form
 
-    async def log(self, guild, msg):
-        cursor.execute("SELECT valor FROM config WHERE clave='logs_channel'")
-        data = cursor.fetchone()
-        if data:
-            canal = guild.get_channel(int(data[0]))
-            if canal:
-                await canal.send(msg)
-
     @discord.ui.button(label="✅ Aprobar", style=discord.ButtonStyle.green)
     async def aprobar(self, interaction: discord.Interaction, button):
 
@@ -37,11 +30,21 @@ class ReviewView(discord.ui.View):
 
         msg = await interaction.client.wait_for("message", check=check)
 
-        await self.user.send(
-            f"🎉 **Formulario aprobado**\n📋 {self.form}\n\n📩 {msg.content}"
+        # 🎭 dar rol automático
+        cursor.execute(
+            "SELECT role_id FROM form_roles WHERE formulario=?",
+            (self.form,)
         )
+        data = cursor.fetchone()
 
-        await self.log(interaction.guild, f"✅ {interaction.user} aprobó {self.user}")
+        if data:
+            role = interaction.guild.get_role(int(data[0]))
+            if role:
+                await self.user.add_roles(role)
+
+        await self.user.send(
+            f"🎉 Aprobado\n📋 {self.form}\n📩 {msg.content}"
+        )
 
         await interaction.followup.send("Aprobado", ephemeral=True)
 
@@ -51,7 +54,7 @@ class ReviewView(discord.ui.View):
         if not es_staff(interaction.user, interaction.guild):
             return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
 
-        await interaction.response.send_message("✍️ Motivo:", ephemeral=True)
+        await interaction.response.send_message("Motivo:", ephemeral=True)
 
         def check(m):
             return m.author == interaction.user
@@ -59,9 +62,7 @@ class ReviewView(discord.ui.View):
         msg = await interaction.client.wait_for("message", check=check)
 
         await self.user.send(
-            f"❌ **Formulario rechazado**\n📋 {self.form}\n\n📩 {msg.content}"
+            f"❌ Rechazado\n📋 {self.form}\n📩 {msg.content}"
         )
-
-        await self.log(interaction.guild, f"❌ {interaction.user} rechazó {self.user}")
 
         await interaction.followup.send("Rechazado", ephemeral=True)
