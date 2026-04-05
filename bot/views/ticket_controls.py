@@ -2,6 +2,7 @@ import discord
 from discord.ui import View, button, Modal, TextInput
 from core.db import close_ticket
 from core.config import STAFF_ROLE_ID
+from bot.utils.transcripts import generar_transcript
 
 def is_staff(interaction):
     role = interaction.guild.get_role(STAFF_ROLE_ID)
@@ -39,6 +40,18 @@ class TicketControls(View):
 
     @button(label="✏️ Renombrar", style=discord.ButtonStyle.blurple)
     async def rename(self, interaction: discord.Interaction, _):
+
+
+    @discord.ui.button(label="🧾 Transcript", style=discord.ButtonStyle.blurple)
+async def transcript(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+    archivo = await generar_transcript(interaction.channel)
+
+    await interaction.response.send_message(
+        "🧾 Transcript generado",
+        file=discord.File(archivo),
+        ephemeral=True
+    )
 
 
 from core.transcript import generate_transcript
