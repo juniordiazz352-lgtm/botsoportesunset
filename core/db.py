@@ -34,7 +34,10 @@ CREATE TABLE IF NOT EXISTS respuestas (
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS tickets (
     user_id INTEGER,
-    channel_id INTEGER
+    channel_id INTEGER,
+    tipo TEXT,
+    estado TEXT,
+    claimed_by INTEGER
 )
 """)
 
