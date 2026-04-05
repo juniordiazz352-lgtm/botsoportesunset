@@ -15,9 +15,16 @@ async def setup_bot():
     await bot.load_extension("bot.cogs.panel_creator")
 
 
-@bot.event
+
+    @bot.event
 async def on_ready():
-    print(f"✅ Bot listo como {bot.user}")
+    print(f"✅ {bot.user} listo")
+
+    from bot.views.ticket_panel import TicketPanelView
+    from bot.views.ticket_controls import TicketControlsView
+
+    bot.add_view(TicketPanelView())
+    bot.add_view(TicketControlsView())
 
 
 async def main():
