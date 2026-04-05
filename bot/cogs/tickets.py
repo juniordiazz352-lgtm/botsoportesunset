@@ -47,6 +47,43 @@ class Tickets(commands.Cog):
 
         await ctx.send(embed=embed, view=TicketPanelView())
 
+# 👤 AGREGAR USUARIO AL TICKET
+@commands.command()
+async def agregar_usuario(self, ctx, usuario: discord.Member):
+
+    from core.db import cursor
+
+    # 🔒 verificar si es ticket
+    cursor.execute(
+        "SELECT * FROM tickets WHERE channel_id=?",
+        (ctx.channel.id,)
+    )
+    data = cursor.fetchone()
+
+    if not data:
+        return await ctx.send("❌ Este canal no es un ticket")
+
+    # 🔒 verificar staff
+    cursor.execute("SELECT valor FROM config WHERE clave='staff_role'")
+    rol_data = cursor.fetchone()
+
+    if not rol_data:
+        return await ctx.send("❌ No hay rol staff configurado")
+
+    rol = ctx.guild.get_role(int(rol_data[0]))
+
+    if rol not in ctx.author.roles:
+        return await ctx.send("❌ Solo staff puede usar esto")
+
+    # ✅ agregar permisos
+    await ctx.channel.set_permissions(
+        usuario,
+        read_messages=True,
+        send_messages=True
+    )
+
+    await ctx.send(f"✅ {usuario.mention} fue agregado al ticket")
+
 
 async def setup(bot):
     await bot.add_cog(Tickets(bot))
