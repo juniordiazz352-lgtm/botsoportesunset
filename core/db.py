@@ -28,3 +28,21 @@ CREATE TABLE IF NOT EXISTS panel_buttons (
 """)
 
 conn.commit()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS tickets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    channel_id INTEGER,
+    estado TEXT
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS config (
+    clave TEXT PRIMARY KEY,
+    valor TEXT
+)
+""")
+
+conn.commit()
