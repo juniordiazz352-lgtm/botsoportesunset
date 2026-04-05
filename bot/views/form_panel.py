@@ -1,7 +1,7 @@
 import discord
-from bot.core.db import cursor
+from core.db import cursor, conn
 
-TIEMPO = 150  # 2 min 30 seg
+TIEMPO = 150
 
 
 class FormSelect(discord.ui.Select):
@@ -10,20 +10,28 @@ class FormSelect(discord.ui.Select):
         forms = cursor.fetchall()
 
         options = [
-            discord.SelectOption(label=f[0], value=f[0])
-            for f in forms
+            discord.SelectOption(
+                label=f[0],
+                description=f"Aplicar a {f[0]}",
+                emoji="📋"
+            ) for f in forms
         ]
 
-        if not options:
-            options = [discord.SelectOption(label="No hay formularios", value="none")]
-
-        super().__init__(placeholder="Selecciona un formulario", options=options)
+        super().__init__(
+            placeholder="📋 Selecciona un formulario",
+            options=options
+        )
 
     async def callback(self, interaction: discord.Interaction):
-        if self.values[0] == "none":
-            return await interaction.response.send_message("❌ No hay formularios", ephemeral=True)
 
-        await interaction.response.send_message("📩 Revisa tu DM", ephemeral=True)
+        embed = discord.Embed(
+            title="📋 Formulario",
+            description="📩 Revisa tu DM\n⏱ 2 minutos 30 segundos por pregunta",
+            color=discord.Color.blurple()
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
         await iniciar_formulario(interaction, self.values[0])
 
 
@@ -33,21 +41,22 @@ class FormPanelView(discord.ui.View):
         self.add_item(FormSelect())
 
 
-async def iniciar_formulario(interaction, nombre_form):
+async def iniciar_formulario(interaction, nombre):
     user = interaction.user
     bot = interaction.client
 
-    cursor.execute("SELECT pregunta FROM preguntas WHERE formulario=?", (nombre_form,))
+    cursor.execute("SELECT pregunta FROM preguntas WHERE formulario=?", (nombre,))
     preguntas = [p[0] for p in cursor.fetchall()]
-
-    if not preguntas:
-        return await user.send("❌ Sin preguntas")
 
     respuestas = []
 
     try:
         await user.send(
-            f"📋 {nombre_form}\n⏱ Tienes 2:30 por pregunta"
+            embed=discord.Embed(
+                title=f"📋 {nombre}",
+                description="⏱ Tienes 2:30 por pregunta",
+                color=discord.Color.green()
+            )
         )
     except:
         return
@@ -55,37 +64,35 @@ async def iniciar_formulario(interaction, nombre_form):
     def check(m):
         return m.author == user and isinstance(m.channel, discord.DMChannel)
 
-    for pregunta in preguntas:
-        await user.send(pregunta)
+    for p in preguntas:
+        await user.send(f"❓ {p}")
 
         try:
             msg = await bot.wait_for("message", timeout=TIEMPO, check=check)
             respuestas.append(msg.content)
 
-# guardar en DB
-from bot.core.db import cursor, conn
-cursor.execute(
-    "INSERT INTO respuestas (user_id, formulario, pregunta, respuesta) VALUES (?, ?, ?, ?)",
-    (user.id, nombre_form, pregunta, msg.content)
-)
-conn.commit()
+            cursor.execute(
+                "INSERT INTO respuestas VALUES (NULL, ?, ?, ?, ?)",
+                (user.id, nombre, p, msg.content)
+            )
+            conn.commit()
+
         except:
-            await user.send("⏰ Tiempo agotado")
-            return
+            return await user.send("⏰ Tiempo agotado")
 
-    # enviar resultados
     cursor.execute("SELECT valor FROM config WHERE clave='forms_channel'")
-    canal_id = cursor.fetchone()
+    data = cursor.fetchone()
 
-    if canal_id:
-        canal = interaction.guild.get_channel(int(canal_id[0]))
+    if data:
+        canal = interaction.guild.get_channel(int(data[0]))
 
-        embed = discord.Embed(title=f"Formulario: {nombre_form}")
+        embed = discord.Embed(
+            title="📥 Nuevo formulario",
+            description=f"👤 {user.mention}\n📋 {nombre}",
+            color=discord.Color.green()
+        )
 
-        for i, p in enumerate(preguntas):
-            embed.add_field(name=p, value=respuestas[i], inline=False)
-
-        from bot.views.form_review import ReviewView
-        await canal.send(embed=embed, view=ReviewView(user))
+        from views.form_review import ReviewView
+        await canal.send(embed=embed, view=ReviewView(user, nombre))
 
     await user.send("✅ Formulario enviado")
