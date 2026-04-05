@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 from discord.ui import Modal, TextInput
 from core.db import get_forms, save_response
 from core.config import FORMS_CHANNEL_ID
