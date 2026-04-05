@@ -46,3 +46,17 @@ CREATE TABLE IF NOT EXISTS config (
 """)
 
 conn.commit()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS preguntas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    formulario TEXT,
+    pregunta TEXT
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS formularios (
+    nombre TEXT PRIMARY KEY
+)
+""")
