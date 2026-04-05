@@ -40,6 +40,11 @@ class SetupView(discord.ui.View):
         msg = await self.wait_msg()
         self.data["transcripts"] = msg.channel_mentions[0].id
 
+        # 📋 CANAL FORMULARIOS
+        await self.ask("📌 Menciona el canal donde llegarán los formularios")
+        msg = await self.wait_msg()
+        self.data["forms_channel"] = msg.channel_mentions[0].id
+        
         # Staff
         await self.ask("📌 Menciona el **rol staff**")
         msg = await self.wait_msg()
