@@ -13,8 +13,19 @@ from bot.main import bot, setup_bot
 from bot.views.ticket_panel import TicketPanel
 from core.config import TOKEN, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from core.db import save_panel, get_panels
+from fastapi import FastAPI
+import threading
+from bot.main import run_bot
 
 app = FastAPI()
+
+@app.get("/")
+def home():
+    return {"status": "ok"}
+
+# correr el bot en segundo plano
+threading.Thread(target=run_bot).start()
+
 
 # =========================
 # DASHBOARD
