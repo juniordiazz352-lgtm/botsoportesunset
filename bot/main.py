@@ -5,27 +5,36 @@ import os
 
 TOKEN = os.getenv("TOKEN")
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.guilds = True
-intents.members = True
+intents = discord.Intents.all()
+intents.message_content = True  # 🔥 IMPORTANTE
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+
+async def setup_bot():
+    await bot.load_extension("bot.cogs.forms")
+    await bot.load_extension("bot.cogs.tickets")
+    await bot.load_extension("bot.cogs.panel_creator")  # 🔥 ya lo tienes
 
 
 @bot.event
 async def on_ready():
     print(f"✅ Bot conectado como {bot.user}")
+
     try:
         synced = await bot.tree.sync()
-        print(f"🔁 Slash commands sincronizados: {len(synced)}")
+        print(f"🔁 Slash sincronizados: {len(synced)}")
     except Exception as e:
         print(e)
 
+    # 🔥 IMPORTANTE: registrar views persistentes
+    from bot.views.ticket_panel import TicketPanelView
+    from bot.views.ticket_controls import TicketControlsView
+    from bot.views.form_panel import FormPanelView
 
-async def setup_bot():
-    await bot.load_extension("bot.cogs.tickets")
-    await bot.load_extension("bot.cogs.forms")
+    bot.add_view(TicketPanelView())
+    bot.add_view(TicketControlsView())
+    bot.add_view(FormPanelView())
 
 
 async def main():
@@ -34,5 +43,5 @@ async def main():
         await bot.start(TOKEN)
 
 
-if __name__ == "__main__":
+def run_bot():
     asyncio.run(main())
