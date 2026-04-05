@@ -17,7 +17,10 @@ async def setup_bot():
     await bot.load_extension("bot.cogs.panel_creator")  # 🔥 ya lo tienes
     await bot.load_extension("bot.cogs.config")
     await bot.load_extension("bot.cogs.setup")
-    
+    await bot.load_extension("bot.cogs.form_builder")
+
+
+
 @bot.event
 async def on_ready():
     print(f"✅ Bot conectado como {bot.user}")
@@ -32,7 +35,9 @@ async def on_ready():
     from bot.views.ticket_panel import TicketPanelView
     from bot.views.ticket_controls import TicketControlsView
     from bot.views.form_panel import FormPanelView
-
+    from bot.views.form_panel import FormPanelView
+    
+    bot.add_view(FormPanelView())
     bot.add_view(TicketPanelView())
     bot.add_view(TicketControlsView())
     bot.add_view(FormPanelView())
