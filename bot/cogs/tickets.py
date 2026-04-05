@@ -84,6 +84,33 @@ async def agregar_usuario(self, ctx, usuario: discord.Member):
 
     await ctx.send(f"✅ {usuario.mention} fue agregado al ticket")
 
+# ❌ QUITAR USUARIO
+@commands.command()
+async def quitar_usuario(self, ctx, usuario: discord.Member):
+
+    from core.db import cursor
+
+    cursor.execute(
+        "SELECT * FROM tickets WHERE channel_id=?",
+        (ctx.channel.id,)
+    )
+    data = cursor.fetchone()
+
+    if not data:
+        return await ctx.send("❌ No es un ticket")
+
+    cursor.execute("SELECT valor FROM config WHERE clave='staff_role'")
+    rol_data = cursor.fetchone()
+
+    rol = ctx.guild.get_role(int(rol_data[0]))
+
+    if rol not in ctx.author.roles:
+        return await ctx.send("❌ Solo staff")
+
+    await ctx.channel.set_permissions(usuario, overwrite=None)
+
+    await ctx.send(f"❌ {usuario.mention} fue removido del ticket")
+
 
 async def setup(bot):
     await bot.add_cog(Tickets(bot))
