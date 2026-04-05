@@ -2,7 +2,7 @@ import discord
 from discord.ui import View, button, Modal, TextInput
 from core.db import close_ticket
 from core.config import STAFF_ROLE_ID
-from bot.utils.transcripts import generar_transcript
+from core.transcripts import generar_transcript
 
 def is_staff(interaction):
     role = interaction.guild.get_role(STAFF_ROLE_ID)
