@@ -55,3 +55,10 @@ CREATE TABLE IF NOT EXISTS tickets (
     claimed_by INTEGER
 )
 """)
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS form_roles (
+    formulario TEXT,
+    role_id INTEGER
+)
+""")
