@@ -1,65 +1,90 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
-from bot.views.ticket_panel import TicketPanel
+from discord.ui import View, Button
 
+# 🔘 BOTÓN CREAR TICKET
+class TicketView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="🎟 Crear Ticket", style=discord.ButtonStyle.green, custom_id="crear_ticket")
+    async def crear_ticket(self, interaction: discord.Interaction, button: Button):
+        guild = interaction.guild
+        user = interaction.user
+
+        # evitar duplicados
+        existing = discord.utils.get(guild.text_channels, name=f"ticket-{user.name}".lower())
+        if existing:
+            await interaction.response.send_message("❌ Ya tienes un ticket abierto", ephemeral=True)
+            return
+
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            guild.me: discord.PermissionOverwrite(read_messages=True)
+        }
+
+        channel = await guild.create_text_channel(
+            name=f"ticket-{user.name}",
+            overwrites=overwrites
+        )
+
+        embed = discord.Embed(
+            title="🎟 Ticket creado",
+            description="Un staff te atenderá pronto.\nPresiona 🔒 para cerrar.",
+            color=discord.Color.green()
+        )
+
+        await channel.send(content=user.mention, embed=embed, view=CloseView())
+
+        await interaction.response.send_message(f"✅ Ticket creado: {channel.mention}", ephemeral=True)
+
+# 🔘 BOTÓN CERRAR
+class CloseView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="🔒 Cerrar Ticket", style=discord.ButtonStyle.red, custom_id="cerrar_ticket")
+    async def cerrar_ticket(self, interaction: discord.Interaction, button: Button):
+        channel = interaction.channel
+
+        await interaction.response.send_message("🔒 Cerrando ticket...", ephemeral=True)
+
+        mensajes = []
+        async for msg in channel.history(limit=100):
+            mensajes.append(f"{msg.author}: {msg.content}")
+
+        transcript = "\n".join(mensajes)
+
+        file = discord.File(
+            fp=bytes(transcript, "utf-8"),
+            filename="transcript.txt"
+        )
+
+        await channel.send("📄 Transcript:", file=file)
+
+        await channel.delete()
+
+# 🎟 COMANDO PANEL
 class Tickets(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="crear_panel_ticket")
-    async def crear_panel(self, interaction: discord.Interaction):
-
-        await interaction.response.send_message(
-            "📌 ¿Cuántos botones quieres?", ephemeral=True
-        )
-
-        def check(m): return m.author == interaction.user
-
-        msg = await self.bot.wait_for("message", check=check)
-        cantidad = int(msg.content)
-
-        botones = []
-
-        for i in range(cantidad):
-            await interaction.followup.send(f"🔘 Nombre botón {i+1}:")
-            nombre = await self.bot.wait_for("message", check=check)
-
-            await interaction.followup.send(f"📂 Menciona categoría {i+1}:")
-            cat_msg = await self.bot.wait_for("message", check=check)
-
-            if not cat_msg.channel_mentions:
-                return await interaction.followup.send("❌ Categoría inválida")
-
-            categoria = cat_msg.channel_mentions[0]
-
-            botones.append({
-                "label": nombre.content,
-                "categoria_id": categoria.id,
-                "tipo": nombre.content.lower().replace(" ", "-")
-            })
-
-        await interaction.followup.send("📝 Título del panel:")
-        titulo = await self.bot.wait_for("message", check=check)
-
-        await interaction.followup.send("📄 Descripción:")
-        desc = await self.bot.wait_for("message", check=check)
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def panel(self, ctx):
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         embed = discord.Embed(
-            title=titulo.content,
-            description=desc.content,
-            color=discord.Color.green()
+            title="🎟 Soporte SB",
+            description="Presiona el botón para abrir un ticket",
+            color=discord.Color.blue()
         )
 
-        msg = await interaction.channel.send(
-    embed=embed,
-    view=TicketPanel(botones)
-)
-
-from core.db import save_panel
-save_panel(interaction.channel.id, msg.id, botones)
-
-        await interaction.followup.send("✅ Panel creado")
+        await ctx.send(embed=embed, view=TicketView())
 
 async def setup(bot):
     await bot.add_cog(Tickets(bot))
