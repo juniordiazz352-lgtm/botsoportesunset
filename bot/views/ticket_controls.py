@@ -81,6 +81,14 @@ await enviar_log(interaction.guild, log)
         if not es_staff(interaction.user, interaction.guild):
             return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
 
+        log = discord.Embed(
+    title="👤 Ticket reclamado",
+    color=discord.Color.blurple()
+)
+log.add_field(name="Staff", value=interaction.user.mention)
+
+await enviar_log(interaction.guild, log)
+
         cursor.execute(
             "UPDATE tickets SET claimed_by=? WHERE channel_id=?",
             (interaction.user.id, interaction.channel.id)
