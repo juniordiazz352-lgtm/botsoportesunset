@@ -74,6 +74,14 @@ await enviar_log(interaction.guild, log)
         await interaction.response.send_message("🗑 Eliminando ticket...", ephemeral=True)
         await interaction.channel.delete()
 
+log = discord.Embed(
+    title="🗑 Ticket eliminado",
+    color=discord.Color.dark_gray()
+)
+log.add_field(name="Staff", value=interaction.user.mention)
+
+await enviar_log(interaction.guild, log)
+
     # 👤 RECLAMAR
     @discord.ui.button(label="👤 Reclamar", style=discord.ButtonStyle.green)
     async def claim(self, interaction: discord.Interaction, button):
