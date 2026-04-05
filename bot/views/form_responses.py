@@ -44,6 +44,24 @@ await enviar_log(guild, log)
 
         await ctx.send(embed=embed)
 
+log = discord.Embed(
+    title="✅ Formulario aprobado",
+    color=discord.Color.green()
+)
+log.add_field(name="Usuario", value=user.mention)
+log.add_field(name="Staff", value=interaction.user.mention)
+
+await enviar_log(interaction.guild, log)
+
+log = discord.Embed(
+    title="❌ Formulario rechazado",
+    color=discord.Color.red()
+)
+log.add_field(name="Usuario", value=user.mention)
+log.add_field(name="Staff", value=interaction.user.mention)
+
+await enviar_log(interaction.guild, log)
+
 
 async def setup(bot):
     await bot.add_cog(FormResponses(bot))
