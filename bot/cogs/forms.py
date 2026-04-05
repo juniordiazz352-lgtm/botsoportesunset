@@ -1,34 +1,29 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
 from core.db import create_form
-from bot.views.form_builder import FormBuilder
-from bot.views.dynamic_form import DynamicForm
 
 class Forms(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="crear_form")
-    async def create(self, interaction: discord.Interaction):
+    @commands.command()
+    async def form(self, ctx):
+        await ctx.send("📩 Revisa tu DM para completar el formulario")
 
-        await interaction.response.send_message(
-            "Nombre del formulario:", ephemeral=True
-        )
+        def check(m):
+            return m.author == ctx.author and isinstance(m.channel, discord.DMChannel)
 
-        def check(m): return m.author == interaction.user
-        msg = await self.bot.wait_for("message", check=check)
+        await ctx.author.send("¿Cuál es tu nombre?")
+        nombre = await self.bot.wait_for("message", check=check)
 
-        create_form(msg.content)
+        await ctx.author.send("¿Por qué quieres entrar?")
+        motivo = await self.bot.wait_for("message", check=check)
 
-        await interaction.followup.send(
-            f"Formulario `{msg.content}` creado",
-            view=FormBuilder(msg.content)
-        )
+        data = f"Nombre: {nombre.content} | Motivo: {motivo.content}"
 
-    @app_commands.command(name="formulario")
-    async def send_form(self, interaction: discord.Interaction, nombre: str):
-        await interaction.response.send_modal(DynamicForm(nombre))
+        create_form(ctx.author.id, ctx.guild.id, data)
+
+        await ctx.author.send("✅ Formulario enviado correctamente")
 
 async def setup(bot):
     await bot.add_cog(Forms(bot))
