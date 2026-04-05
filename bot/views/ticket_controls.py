@@ -26,6 +26,17 @@ class TicketControlsView(discord.ui.View):
 
         archivo = await generar_transcript(interaction.channel)
 
+        from bot.core.logger import enviar_log
+
+log = discord.Embed(
+    title="🔒 Ticket cerrado",
+    color=discord.Color.red()
+)
+log.add_field(name="Staff", value=interaction.user.mention)
+log.add_field(name="Canal", value=interaction.channel.name)
+
+await enviar_log(interaction.guild, log)
+
         cursor.execute(
             "SELECT user_id FROM tickets WHERE channel_id=?",
             (interaction.channel.id,)
