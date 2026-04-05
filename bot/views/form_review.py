@@ -1,32 +1,67 @@
 import discord
+from core.db import cursor
+
+def es_staff(member, guild):
+    cursor.execute("SELECT valor FROM config WHERE clave='staff_role'")
+    data = cursor.fetchone()
+    if not data:
+        return False
+    rol = guild.get_role(int(data[0]))
+    return rol in member.roles if rol else False
 
 
 class ReviewView(discord.ui.View):
-    def __init__(self, user):
+    def __init__(self, user, form):
         super().__init__(timeout=None)
         self.user = user
-@discord.ui.button(label="✅ Aprobar", style=discord.ButtonStyle.green)
-async def aprobar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.form = form
 
-    await interaction.response.send_message(
-        "✍️ Escribe el mensaje que quieres enviar al usuario:",
-        ephemeral=True
-    )
+    async def log(self, guild, msg):
+        cursor.execute("SELECT valor FROM config WHERE clave='logs_channel'")
+        data = cursor.fetchone()
+        if data:
+            canal = guild.get_channel(int(data[0]))
+            if canal:
+                await canal.send(msg)
 
-    def check(m):
-        return m.author == interaction.user and m.channel == interaction.channel
+    @discord.ui.button(label="✅ Aprobar", style=discord.ButtonStyle.green)
+    async def aprobar(self, interaction: discord.Interaction, button):
 
-    try:
-        msg = await interaction.client.wait_for("message", timeout=60, check=check)
-    except:
-        return await interaction.followup.send("⏰ Tiempo agotado", ephemeral=True)
+        if not es_staff(interaction.user, interaction.guild):
+            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
 
-    # enviar mensaje personalizado
-    await self.user.send(f"🎉 Has sido aprobado\n\n📩 Mensaje:\n{msg.content}")
+        await interaction.response.send_message("✍️ Escribe mensaje:", ephemeral=True)
 
-    await interaction.followup.send("✅ Aprobado correctamente", ephemeral=True)
+        def check(m):
+            return m.author == interaction.user
+
+        msg = await interaction.client.wait_for("message", check=check)
+
+        await self.user.send(
+            f"🎉 **Formulario aprobado**\n📋 {self.form}\n\n📩 {msg.content}"
+        )
+
+        await self.log(interaction.guild, f"✅ {interaction.user} aprobó {self.user}")
+
+        await interaction.followup.send("Aprobado", ephemeral=True)
 
     @discord.ui.button(label="❌ Rechazar", style=discord.ButtonStyle.red)
-    async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.user.send("❌ Rechazado")
-        await interaction.response.send_message("Rechazado", ephemeral=True)
+    async def rechazar(self, interaction: discord.Interaction, button):
+
+        if not es_staff(interaction.user, interaction.guild):
+            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
+
+        await interaction.response.send_message("✍️ Motivo:", ephemeral=True)
+
+        def check(m):
+            return m.author == interaction.user
+
+        msg = await interaction.client.wait_for("message", check=check)
+
+        await self.user.send(
+            f"❌ **Formulario rechazado**\n📋 {self.form}\n\n📩 {msg.content}"
+        )
+
+        await self.log(interaction.guild, f"❌ {interaction.user} rechazó {self.user}")
+
+        await interaction.followup.send("Rechazado", ephemeral=True)
