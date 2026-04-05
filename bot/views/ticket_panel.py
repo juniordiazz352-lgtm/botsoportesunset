@@ -64,6 +64,17 @@ class TicketButton(discord.ui.Button):
             overwrites=overwrites,
             category=categoria
         )
+        from bot.core.logger import enviar_log
+
+log = discord.Embed(
+    title="🎫 Ticket abierto",
+    color=discord.Color.green()
+)
+log.add_field(name="Usuario", value=interaction.user.mention)
+log.add_field(name="Tipo", value=self.nombre)
+log.add_field(name="Canal", value=channel.mention)
+
+await enviar_log(interaction.guild, log)
 
         cursor.execute(
             "INSERT INTO tickets VALUES (?, ?, ?, ?, ?)",
@@ -85,15 +96,6 @@ class TicketButton(discord.ui.Button):
 
         from bot.core.logger import enviar_log
 
-log = discord.Embed(
-    title="🎫 Ticket abierto",
-    color=discord.Color.green()
-)
-log.add_field(name="Usuario", value=interaction.user.mention)
-log.add_field(name="Tipo", value=self.nombre)
-log.add_field(name="Canal", value=channel.mention)
-
-await enviar_log(interaction.guild, log)
 
         await channel.send(
             content=user.mention,
