@@ -99,6 +99,17 @@ class PanelCreator(commands.Cog):
 
         await ctx.send(embed=embed, view=view)
 
+@commands.hybrid_command(name="agg_form_panel")
+async def agg_form_panel(self, ctx, panel: str, formulario: str):
+
+    cursor.execute(
+        "INSERT INTO panel_buttons (panel_nombre, label, estilo, tipo) VALUES (?, ?, ?, ?)",
+        (panel, formulario, 1, "form_select")
+    )
+    conn.commit()
+
+    await ctx.send("✅ Formulario agregado al panel")
+
 
 async def setup(bot):
     await bot.add_cog(PanelCreator(bot))
