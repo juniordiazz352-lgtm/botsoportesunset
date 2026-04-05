@@ -12,8 +12,8 @@ class Tickets(commands.Cog):
 
         embed = discord.Embed(
             title="🎫 Soporte",
-            description="Selecciona una opcion y aprieta en ella para abrir un ticket",
-            color=discord.Color.blurple()
+            description="Selecciona una opcion y presiona en ella y abriras un ticket",
+            color=discord.Color.green()
         )
 
         await ctx.send(embed=embed, view=TicketPanelView())
