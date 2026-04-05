@@ -1,9 +1,12 @@
-def generate_transcript(messages):
-    html = """<html><body style='background:#0f172a;color:white'>"""
+async def generar_transcript(channel):
+    mensajes = []
 
-    for m in messages:
-        content = m.content.replace("<", "&lt;").replace(">", "&gt;")
-        html += f"<p><b>{m.author}</b>: {content}</p>"
+    async for msg in channel.history(limit=None, oldest_first=True):
+        mensajes.append(f"{msg.author}: {msg.content}\n")
 
-    html += "</body></html>"
-    return html
+    nombre = f"transcript-{channel.id}.txt"
+
+    with open(nombre, "w", encoding="utf-8") as f:
+        f.writelines(mensajes)
+
+    return nombre
