@@ -61,6 +61,14 @@ async def iniciar_formulario(interaction, nombre_form):
         try:
             msg = await bot.wait_for("message", timeout=TIEMPO, check=check)
             respuestas.append(msg.content)
+
+# guardar en DB
+from bot.core.db import cursor, conn
+cursor.execute(
+    "INSERT INTO respuestas (user_id, formulario, pregunta, respuesta) VALUES (?, ?, ?, ?)",
+    (user.id, nombre_form, pregunta, msg.content)
+)
+conn.commit()
         except:
             await user.send("⏰ Tiempo agotado")
             return
