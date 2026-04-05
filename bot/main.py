@@ -5,19 +5,27 @@ import os
 
 TOKEN = os.getenv("TOKEN")
 
-intents = discord.Intents.all()
+intents = discord.Intents.default()
+intents.message_content = True
+intents.guilds = True
+intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-
-async def setup_bot():
-    await bot.load_extension("bot.cogs.forms")
-    await bot.load_extension("bot.cogs.tickets")
 
 
 @bot.event
 async def on_ready():
     print(f"✅ Bot conectado como {bot.user}")
+    try:
+        synced = await bot.tree.sync()
+        print(f"🔁 Slash commands sincronizados: {len(synced)}")
+    except Exception as e:
+        print(e)
+
+
+async def setup_bot():
+    await bot.load_extension("bot.cogs.tickets")
+    await bot.load_extension("bot.cogs.forms")
 
 
 async def main():
@@ -26,5 +34,5 @@ async def main():
         await bot.start(TOKEN)
 
 
-def run_bot():
+if __name__ == "__main__":
     asyncio.run(main())
