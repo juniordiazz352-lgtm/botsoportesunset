@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from bot.views.ticket_panel import TicketPanelView
 
 STAFF_ROLE_NAME = "Staff"
 
