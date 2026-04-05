@@ -14,20 +14,21 @@ class FormSelect(discord.ui.Select):
                 label=f[0],
                 description=f"Aplicar a {f[0]}",
                 emoji="📋"
-            ) for f in forms
+            )
+            for f in forms
         ]
 
         super().__init__(
-            placeholder="📋 Selecciona un formulario",
+            placeholder="📋 Selecciona formulario",
             options=options
         )
 
     async def callback(self, interaction: discord.Interaction):
 
         embed = discord.Embed(
-            title="📋 Formulario",
-            description="📩 Revisa tu DM\n⏱ 2 minutos 30 segundos por pregunta",
-            color=discord.Color.blurple()
+            title="📩 Formulario enviado",
+            description="Revisa tu DM",
+            color=discord.Color.green()
         )
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -50,16 +51,7 @@ async def iniciar_formulario(interaction, nombre):
 
     respuestas = []
 
-    try:
-        await user.send(
-            embed=discord.Embed(
-                title=f"📋 {nombre}",
-                description="⏱ Tienes 2:30 por pregunta",
-                color=discord.Color.green()
-            )
-        )
-    except:
-        return
+    await user.send(f"📋 {nombre}\n⏱ 2:30 por pregunta")
 
     def check(m):
         return m.author == user and isinstance(m.channel, discord.DMChannel)
@@ -81,15 +73,15 @@ async def iniciar_formulario(interaction, nombre):
             return await user.send("⏰ Tiempo agotado")
 
     cursor.execute("SELECT valor FROM config WHERE clave='forms_channel'")
-    data = cursor.fetchone()
+    canal = cursor.fetchone()
 
-    if data:
-        canal = interaction.guild.get_channel(int(data[0]))
+    if canal:
+        canal = interaction.guild.get_channel(int(canal[0]))
 
         embed = discord.Embed(
             title="📥 Nuevo formulario",
             description=f"👤 {user.mention}\n📋 {nombre}",
-            color=discord.Color.green()
+            color=discord.Color.blurple()
         )
 
         from views.form_review import ReviewView
