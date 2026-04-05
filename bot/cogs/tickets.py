@@ -63,14 +63,15 @@ class Tickets(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="panel")
-    async def panel(self, ctx):
-        embed = discord.Embed(
-            title="🎫 Sistema de Tickets",
-            description="Presiona el botón para abrir un ticket",
-            color=discord.Color.green()
-        )
-        await ctx.send(embed=embed, view=TicketView())
+  @commands.command()
+async def panel(self, ctx):
+    embed = discord.Embed(
+        title="🎫 Sistema de Tickets",
+        description="Presiona el botón para crear un ticket",
+        color=discord.Color.green()
+    )
+
+    await ctx.send(embed=embed, view=TicketPanelView())
 
 
 async def setup(bot):
