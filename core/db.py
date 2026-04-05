@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS respuestas (
 
 # tickets
 cursor.execute("""
+CREATE TABLE IF NOT EXISTS ticket_types (
+    nombre TEXT PRIMARY KEY,
+    emoji TEXT,
+    categoria_id INTEGER
+)
+""")
+
+cursor.execute("""
 CREATE TABLE IF NOT EXISTS tickets (
     user_id INTEGER,
     channel_id INTEGER,
@@ -40,7 +48,6 @@ CREATE TABLE IF NOT EXISTS tickets (
     claimed_by INTEGER
 )
 """)
-
 # config
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS config (
