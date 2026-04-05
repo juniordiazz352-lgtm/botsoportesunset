@@ -15,7 +15,7 @@ async def setup_bot():
     await bot.load_extension("bot.cogs.forms")
     await bot.load_extension("bot.cogs.tickets")
     await bot.load_extension("bot.cogs.panel_creator")  # 🔥 ya lo tienes
-
+    await bot.load_extension("bot.cogs.config")
 
 @bot.event
 async def on_ready():
