@@ -1,3 +1,5 @@
+import discord
+from discord.ext import commands
 @commands.command()
 @commands.is_owner()
 async def panel_form(self, ctx):
