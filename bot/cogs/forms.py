@@ -1,29 +1,32 @@
 import discord
 from discord.ext import commands
-from core.db import create_form
+from bot.views.form_panel import FormPanelView
+from bot.views.form_builder import FormBuilderView
+
 
 class Forms(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # 📋 Panel público
     @commands.command()
-    async def form(self, ctx):
-        await ctx.send("📩 Revisa tu DM para completar el formulario")
+    async def panel_form(self, ctx):
+        embed = discord.Embed(
+            title="📋 Formularios",
+            description="Presiona el botón para completar un formulario",
+            color=discord.Color.blurple()
+        )
 
-        def check(m):
-            return m.author == ctx.author and isinstance(m.channel, discord.DMChannel)
+        await ctx.send(embed=embed, view=FormPanelView())
 
-        await ctx.author.send("¿Cuál es tu nombre?")
-        nombre = await self.bot.wait_for("message", check=check)
+    # 🛠 Crear formulario (USA TU BUILDER REAL)
+    @commands.command()
+    async def crear_form(self, ctx):
+        await ctx.send(
+            "🛠 Creador de formularios",
+            view=FormBuilderView(ctx.author)
+        )
 
-        await ctx.author.send("¿Por qué quieres entrar?")
-        motivo = await self.bot.wait_for("message", check=check)
-
-        data = f"Nombre: {nombre.content} | Motivo: {motivo.content}"
-
-        create_form(ctx.author.id, ctx.guild.id, data)
-
-        await ctx.author.send("✅ Formulario enviado correctamente")
 
 async def setup(bot):
     await bot.add_cog(Forms(bot))
