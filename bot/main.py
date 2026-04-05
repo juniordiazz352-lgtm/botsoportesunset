@@ -18,7 +18,7 @@ async def setup_bot():
     await bot.load_extension("bot.cogs.config")
     await bot.load_extension("bot.cogs.setup")
     await bot.load_extension("bot.cogs.form_builder")
-
+    await bot.load_extension("bot.cogs.form_responses")
 
 
 @bot.event
