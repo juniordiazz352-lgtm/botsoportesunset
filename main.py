@@ -16,26 +16,25 @@ async def on_ready():
     print(f"🔥 Bot conectado como {bot.user}")
 
 
-# 🔥 CARGAR TODOS LOS COGS AUTOMÁTICO
-async def load_cogs():
-    for root, dirs, files in os.walk("./bot/cogs"):
-        for file in files:
-            if file.endswith(".py"):
-                ruta = os.path.join(root, file)\
-                    .replace("\\", ".")\
-                    .replace("/", ".")[:-3]
 
-                try:
-                    await bot.load_extension(ruta)
-                    print(f"✅ Cargado: {ruta}")
-                except Exception as e:
-                    print(f"❌ Error en {ruta}: {e}")
+
+async def load_cogs():
+    for file in os.listdir("./bot/cogs"):
+        if file.endswith(".py") and file != "__init__.py":
+
+            cog = f"bot.cogs.{file[:-3]}"
+
+            try:
+                await bot.load_extension(cog)
+                print(f"✅ Cargado: {cog}")
+            except Exception as e:
+                print(f"❌ Error en {cog}: {e}")
 
 
 async def main():
     async with bot:
         await load_cogs()
-        import os
+     
 
 await bot.start(os.getenv("TOKEN"))
 
