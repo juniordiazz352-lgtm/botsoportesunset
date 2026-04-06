@@ -65,4 +65,5 @@ async def stats(ctx):
 
 
 async def setup(bot):
+    if not bot.get_cog("PanelCreator"):
     await bot.add_cog(PanelCreator(bot))
