@@ -1,6 +1,7 @@
 import discord
 from core.db import cursor
 from bot.views.ticket_actions import TicketActions
+from core.utils import send_log
 
 
 class DynamicTicketView(discord.ui.View):
@@ -16,7 +17,7 @@ class TicketButton(discord.ui.Button):
         super().__init__(label=nombre, style=discord.ButtonStyle.green)
         self.nombre_ticket = nombre
 
-    async def callback(self, interaction: discord.Interaction):
+    async def callback(self, interaction):
 
         guild = interaction.guild
         user = interaction.user
@@ -29,44 +30,23 @@ class TicketButton(discord.ui.Button):
 
         category = guild.get_channel(int(data[0]))
 
-        if not category:
-            return await interaction.response.send_message("❌ Categoría inválida", ephemeral=True)
-
-        # 🚫 Anti duplicados
         for ch in category.channels:
             if ch.topic and str(user.id) in ch.topic:
-                return await interaction.response.send_message(
-                    "❌ Ya tienes un ticket abierto",
-                    ephemeral=True
-                )
-
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
-            guild.me: discord.PermissionOverwrite(view_channel=True)
-        }
+                return await interaction.response.send_message("❌ Ya tienes un ticket", ephemeral=True)
 
         channel = await category.create_text_channel(
-            name=f"{self.nombre_ticket}-{user.name}".lower().replace(" ", "-"),
-            overwrites=overwrites,
+            name=f"{self.nombre_ticket}-{user.name}",
             topic=str(user.id)
         )
 
+        await send_log(guild, f"🎟️ Ticket creado por {user} ({self.nombre_ticket})")
+
         embed = discord.Embed(
-            title=f"🎟️ Ticket: {self.nombre_ticket}",
-            description="Un staff te atenderá pronto.\nUsa los botones para gestionar el ticket.",
+            title=f"🎟️ {self.nombre_ticket}",
+            description="Usa los botones abajo",
             color=discord.Color.green()
         )
 
-        embed.set_footer(text=f"Usuario ID: {user.id}")
+        await channel.send(content=user.mention, embed=embed, view=TicketActions())
 
-        await channel.send(
-            content=user.mention,
-            embed=embed,
-            view=TicketActions()
-        )
-
-        await interaction.response.send_message(
-            f"✅ Ticket creado: {channel.mention}",
-            ephemeral=True
-        )
+        await interaction.response.send_message(f"✅ {channel.mention}", ephemeral=True)
