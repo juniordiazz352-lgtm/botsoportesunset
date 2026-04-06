@@ -4,7 +4,6 @@ import asyncio
 import os
 
 intents = discord.Intents.all()
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 async def setup_bot():
@@ -31,5 +30,6 @@ async def main():
 def run_bot():
     asyncio.run(main())
 
+# 🔥 IMPORTANTE
 if __name__ == "__main__":
     run_bot()
