@@ -96,12 +96,13 @@ class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="help")
-    async def help(self, ctx):
+@commands.command(name="help")
+async def help(self, ctx):
 
-        view = HelpMenu(self.bot, ctx)
+    await ctx.message.delete()
 
-        await ctx.send(embed=view.get_embed(), view=view)
+    view = HelpMenu(self.bot, ctx)
+    await ctx.send(embed=view.get_embed(), view=view)
 
 
 async def setup(bot):
