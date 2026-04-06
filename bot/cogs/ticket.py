@@ -1,65 +1,34 @@
-import discord
-from discord.ext import commands
-from core.db import cursor, conn
-from bot.views.ticket_panel import TicketPanelView
+@commands.command()
+@commands.has_permissions(administrator=True)
+async def panelticket(self, ctx):
 
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
 
-class Tickets(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    await ctx.send("📝 Título del panel:")
+    titulo = (await self.bot.wait_for("message", check=check)).content
 
-    # ➕ CREAR TIPO DE TICKET (SOLO OWNER)
-    @commands.command()
-    @commands.is_owner()
-    async def crear_ticket_tipo(self, ctx, nombre, emoji, categoria: discord.CategoryChannel):
+    await ctx.send("📄 Descripción:")
+    descripcion = (await self.bot.wait_for("message", check=check)).content
 
-        cursor.execute(
-            "INSERT OR REPLACE INTO ticket_types VALUES (?, ?, ?)",
-            (nombre, emoji, categoria.id)
-        )
-        conn.commit()
+    await ctx.send("🎟️ Escribe los nombres de los tickets uno por uno.\nEscribe `listo` para terminar.")
 
-        await ctx.send(f"✅ Tipo `{nombre}` creado")
+    botones = []
 
-    # 🎛 PANEL
-    @commands.command()
-    @commands.is_owner()
-    async def panel_ticket(self, ctx):
+    while True:
+        msg = await self.bot.wait_for("message", check=check)
 
-        embed = discord.Embed(
-            title="🎫 Soporte|SB",
-            description="Selecciona una de las opciones de tickets con las que contamos,al presionar en ellas abriras un ticket",
-            color=discord.Color.blurple()
-        )
+        if msg.content.lower() == "listo":
+            break
 
-        await ctx.send(embed=embed, view=TicketPanelView())
+        botones.append(msg.content)
 
-    # 👤 AGREGAR USUARIO
-    @commands.command()
-    async def agregar_usuario(self, ctx, usuario: discord.Member):
+    from bot.views.dynamic_ticket import DynamicTicketView
 
-        cursor.execute(
-            "SELECT * FROM tickets WHERE channel_id=?",
-            (ctx.channel.id,)
-        )
-        if not cursor.fetchone():
-            return await ctx.send("❌ No es un ticket")
+    embed = discord.Embed(
+        title=titulo,
+        description=descripcion,
+        color=discord.Color.blurple()
+    )
 
-        await ctx.channel.set_permissions(
-            usuario,
-            read_messages=True,
-            send_messages=True
-        )
-
-        await ctx.send(f"✅ {usuario.mention} agregado")
-
-    # ❌ QUITAR USUARIO
-    @commands.command()
-    async def quitar_usuario(self, ctx, usuario: discord.Member):
-
-        await ctx.channel.set_permissions(usuario, overwrite=None)
-        await ctx.send(f"❌ {usuario.mention} removido")
-
-
-async def setup(bot):
-    await bot.add_cog(Tickets(bot))
+    await ctx.send(embed=embed, view=DynamicTicketView(botones))
