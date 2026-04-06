@@ -35,6 +35,9 @@ def login():
 @app.get("/callback", response_class=HTMLResponse)
 async def callback(code: str):
 
+    if not is_staff(member):
+    return "<h1>❌ No autorizado</h1>"
+
     async with httpx.AsyncClient() as client:
 
         data = {
@@ -64,7 +67,13 @@ async def callback(code: str):
     guild = bot.guilds[0]
     member = guild.get_member(int(user_json["id"]))
 
-    if not member or not any(role.id == STAFF_ROLE_ID for role in member.roles):
+    OWNER_ID = 1272066173810380861  # TU ID
+STAFF_ROLE_ID = 1472478801710678258
+
+def is_staff(member):
+    if member.id == OWNER_ID:
+        return True
+    return any(role.id == STAFF_ROLE_ID for role in member.roles)
         return "<h1>❌ No autorizado</h1>"
 
     return f"""
@@ -83,25 +92,33 @@ async def callback(code: str):
 @app.get("/tickets", response_class=HTMLResponse)
 def tickets():
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect("tickets.db")
     cursor = conn.cursor()
-
     cursor.execute("SELECT * FROM tickets")
     rows = cursor.fetchall()
     conn.close()
 
-    html = "<h1>Tickets</h1>"
+    html = ""
 
     for row in rows:
         html += f"""
-        <div>
-        Canal: {row[0]}<br>
-        Usuario: {row[1]}<br>
-        <a href="/close/{row[0]}">Cerrar</a>
-        </div><hr>
+        <div class="card">
+            🎫 Canal: {row[0]}<br>
+            👤 Usuario: {row[1]}<br><br>
+            <a class="btn danger" href="/close/{row[0]}">Cerrar</a>
+        </div>
         """
 
-    return html
+    return f"""
+    <html>
+    <body style="background:#313338;color:white;font-family:Arial;">
+    <div style="margin-left:240px;padding:20px;">
+        <h1>🎫 Tickets</h1>
+        {html}
+    </div>
+    </body>
+    </html>
+    """
 
 
 # =========================
@@ -132,26 +149,33 @@ async def close_ticket(channel_id: int):
 @app.get("/forms", response_class=HTMLResponse)
 def forms():
 
-    if not os.path.exists(FORMS_RESPONSES):
+    if not os.path.exists("form_responses.json"):
         return "<h1>No hay formularios</h1>"
 
-    with open(FORMS_RESPONSES, "r") as f:
+    with open("form_responses.json", "r") as f:
         data = json.load(f)
 
-    html = "<h1>Formularios</h1>"
+    html = ""
 
     for i, form in enumerate(data):
         html += f"""
-        <div>
-        Usuario: {form['user']}<br>
-        {form['answers']}<br>
-        <a href="/reply/{i}">Responder</a>
-        </div><hr>
+        <div class="card">
+            👤 {form['user']}<br>
+            📋 {form['answers']}<br><br>
+            <a class="btn" href="/reply/{i}">Responder</a>
+        </div>
         """
 
-    return html
-
-
+    return f"""
+    <html>
+    <body style="background:#313338;color:white;font-family:Arial;">
+    <div style="margin-left:240px;padding:20px;">
+        <h1>📋 Formularios</h1>
+        {html}
+    </div>
+    </body>
+    </html>
+    """
 # =========================
 # 💬 RESPONDER REAL
 # =========================
@@ -242,5 +266,33 @@ def home():
     </div>
 
     </body>
+
+    @app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+
+    conn = sqlite3.connect("tickets.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM tickets")
+    total_tickets = cursor.fetchone()[0]
+    conn.close()
+
+    return f"""
+    <body style="background:#313338;color:white;font-family:Arial;">
+
+    <div style="margin-left:240px;padding:20px;">
+        <h1>📊 Dashboard</h1>
+
+        <div class="card">
+            🎫 Tickets activos: {total_tickets}
+        </div>
+
+        <div class="card">
+            📋 Formularios activos
+        </div>
+
+    </div>
+
+    </body>
+    """
     </html>
     """
