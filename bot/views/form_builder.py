@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from core.db import cursor, conn
+from bot.core.db import cursor, conn
 
 
 class FormBuilder(commands.Cog):
