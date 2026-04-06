@@ -16,6 +16,7 @@ async def setup_bot():
 
 
 
+
     @bot.event
 async def on_ready():
     print(f"✅ {bot.user} listo")
@@ -25,7 +26,6 @@ async def on_ready():
 
     bot.add_view(TicketPanelView())
     bot.add_view(TicketControlsView())
-
 
 async def main():
     async with bot:
