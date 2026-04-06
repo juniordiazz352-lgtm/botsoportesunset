@@ -8,11 +8,14 @@ from bot.utils.bot_api import get_bot
 
 app = FastAPI()
 
+# =========================
 # 🔑 CONFIG
+# =========================
 CLIENT_ID = 1485387890786697380
 CLIENT_SECRET = eKd8rNscVk3QXcSrVu0jUr3wiqO9fAiY
 REDIRECT_URI = https://botsoportesunset.onrender.com/callback
 
+OWNER_ID = 1272066173810380861
 STAFF_ROLE_ID = 1472478801710678258
 
 DB_PATH = "tickets.db"
@@ -25,18 +28,15 @@ FORMS_RESPONSES = "form_responses.json"
 @app.get("/login")
 def login():
     return RedirectResponse(
-        f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify%20guilds.members.read"
+        f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify"
     )
 
 
 # =========================
-# 🔁 CALLBACK (CHECK STAFF)
+# 🔁 CALLBACK
 # =========================
 @app.get("/callback", response_class=HTMLResponse)
 async def callback(code: str):
-
-    if not is_staff(member):
-    return "<h1>❌ No autorizado</h1>"
 
     async with httpx.AsyncClient() as client:
 
@@ -62,160 +62,24 @@ async def callback(code: str):
 
         user_json = user.json()
 
-    # 🔥 SOLO STAFF
     bot = get_bot()
+
+    if not bot or not bot.guilds:
+        return HTMLResponse("<h1>Error: bot no conectado</h1>")
+
     guild = bot.guilds[0]
     member = guild.get_member(int(user_json["id"]))
 
-    OWNER_ID = 1272066173810380861  # TU ID
-STAFF_ROLE_ID = 1472478801710678258
+    # 🔐 VALIDACIÓN
+    def is_staff(member):
+        if member.id == OWNER_ID:
+            return True
+        return any(role.id == STAFF_ROLE_ID for role in member.roles)
 
-def is_staff(member):
-    if member.id == OWNER_ID:
-        return True
-    return any(role.id == STAFF_ROLE_ID for role in member.roles)
-        return "<h1>❌ No autorizado</h1>"
+    if not member or not is_staff(member):
+        return HTMLResponse("<h1>❌ No autorizado</h1>")
 
-    return f"""
-    <body style='background:#111;color:#eee'>
-    <h1>Bienvenido {user_json['username']}</h1>
-
-    <a href="/tickets">🎫 Tickets</a><br>
-    <a href="/forms">📋 Formularios</a>
-    </body>
-    """
-
-
-# =========================
-# 🎫 TICKETS (REAL)
-# =========================
-@app.get("/tickets", response_class=HTMLResponse)
-def tickets():
-
-    conn = sqlite3.connect("tickets.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM tickets")
-    rows = cursor.fetchall()
-    conn.close()
-
-    html = ""
-
-    for row in rows:
-        html += f"""
-        <div class="card">
-            🎫 Canal: {row[0]}<br>
-            👤 Usuario: {row[1]}<br><br>
-            <a class="btn danger" href="/close/{row[0]}">Cerrar</a>
-        </div>
-        """
-
-    return f"""
-    <html>
-    <body style="background:#313338;color:white;font-family:Arial;">
-    <div style="margin-left:240px;padding:20px;">
-        <h1>🎫 Tickets</h1>
-        {html}
-    </div>
-    </body>
-    </html>
-    """
-
-
-# =========================
-# ❌ CERRAR TICKET REAL
-# =========================
-@app.get("/close/{channel_id}")
-async def close_ticket(channel_id: int):
-
-    bot = get_bot()
-    channel = bot.get_channel(channel_id)
-
-    if channel:
-        await channel.delete()
-
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM tickets WHERE channel_id = ?", (channel_id,))
-    conn.commit()
-    conn.close()
-
-    return RedirectResponse("/tickets")
-
-
-# =========================
-# 📋 FORMULARIOS
-# =========================
-@app.get("/forms", response_class=HTMLResponse)
-def forms():
-
-    if not os.path.exists("form_responses.json"):
-        return "<h1>No hay formularios</h1>"
-
-    with open("form_responses.json", "r") as f:
-        data = json.load(f)
-
-    html = ""
-
-    for i, form in enumerate(data):
-        html += f"""
-        <div class="card">
-            👤 {form['user']}<br>
-            📋 {form['answers']}<br><br>
-            <a class="btn" href="/reply/{i}">Responder</a>
-        </div>
-        """
-
-    return f"""
-    <html>
-    <body style="background:#313338;color:white;font-family:Arial;">
-    <div style="margin-left:240px;padding:20px;">
-        <h1>📋 Formularios</h1>
-        {html}
-    </div>
-    </body>
-    </html>
-    """
-# =========================
-# 💬 RESPONDER REAL
-# =========================
-@app.get("/reply/{index}", response_class=HTMLResponse)
-def reply_form(index: int):
-    return f"""
-    <form action="/send/{index}" method="post">
-        <input name="msg">
-        <button>Enviar</button>
-    </form>
-    """
-
-
-@app.post("/send/{index}")
-async def send_reply(index: int, request: Request):
-
-    form = await request.form()
-    msg = form.get("msg")
-
-    with open(FORMS_RESPONSES, "r") as f:
-        data = json.load(f)
-
-    user_name = data[index]["user"]
-
-    bot = get_bot()
-
-    # buscar usuario real
-    for guild in bot.guilds:
-        for member in guild.members:
-            if str(member) == user_name:
-                try:
-                    await member.send(msg)
-                except:
-                    pass
-
-    return RedirectResponse("/forms", status_code=303)
-
-@app.get("/", response_class=HTMLResponse)
-def home():
-    return """
+    return HTMLResponse("""
     <html>
     <head>
     <style>
@@ -253,46 +117,167 @@ def home():
     <body>
 
     <div class="sidebar">
-        <h2>🌐 Panel</h2>
-        <a href="/dashboard">🏠 Inicio</a>
-        <a href="/tickets">🎫 Tickets</a>
-        <a href="/forms">📋 Formularios</a>
-        <a href="/login">🔑 Login</a>
+        <h2>Panel</h2>
+        <a href="/dashboard">Inicio</a>
+        <a href="/tickets">Tickets</a>
+        <a href="/forms">Formularios</a>
     </div>
 
     <div class="content">
-        <h1>Bienvenido al Panel</h1>
-        <p>Sistema profesional conectado a Discord</p>
+        <h1>Dashboard</h1>
+        <p>Panel conectado a Discord</p>
     </div>
 
     </body>
+    </html>
+    """)
 
-    @app.get("/dashboard", response_class=HTMLResponse)
+
+# =========================
+# 📊 DASHBOARD
+# =========================
+@app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
 
-    conn = sqlite3.connect("tickets.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM tickets")
-    total_tickets = cursor.fetchone()[0]
+    total = cursor.fetchone()[0]
     conn.close()
 
-    return f"""
+    return HTMLResponse(f"""
     <body style="background:#313338;color:white;font-family:Arial;">
-
     <div style="margin-left:240px;padding:20px;">
-        <h1>📊 Dashboard</h1>
+        <h1>Dashboard</h1>
 
-        <div class="card">
-            🎫 Tickets activos: {total_tickets}
-        </div>
-
-        <div class="card">
-            📋 Formularios activos
+        <div style="background:#2b2d31;padding:15px;border-radius:10px;">
+            Tickets activos: {total}
         </div>
 
     </div>
-
     </body>
-    """
-    </html>
-    """
+    """)
+
+
+# =========================
+# 🎫 TICKETS
+# =========================
+@app.get("/tickets", response_class=HTMLResponse)
+def tickets():
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tickets")
+    rows = cursor.fetchall()
+    conn.close()
+
+    html = ""
+
+    for row in rows:
+        html += f"""
+        <div style="background:#2b2d31;padding:15px;border-radius:10px;margin:10px;">
+            Canal: {row[0]}<br>
+            Usuario: {row[1]}<br><br>
+            <a href="/close/{row[0]}" style="background:red;padding:5px;color:white;">Cerrar</a>
+        </div>
+        """
+
+    return HTMLResponse(f"""
+    <body style="background:#313338;color:white;font-family:Arial;">
+    <div style="margin-left:240px;padding:20px;">
+        <h1>Tickets</h1>
+        {html}
+    </div>
+    </body>
+    """)
+
+
+# =========================
+# ❌ CERRAR TICKET REAL
+# =========================
+@app.get("/close/{channel_id}")
+async def close_ticket(channel_id: int):
+
+    bot = get_bot()
+    channel = bot.get_channel(channel_id)
+
+    if channel:
+        await channel.delete()
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tickets WHERE channel_id = ?", (channel_id,))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse("/tickets")
+
+
+# =========================
+# 📋 FORMULARIOS
+# =========================
+@app.get("/forms", response_class=HTMLResponse)
+def forms():
+
+    if not os.path.exists(FORMS_RESPONSES):
+        return HTMLResponse("<h1>No hay formularios</h1>")
+
+    with open(FORMS_RESPONSES, "r") as f:
+        data = json.load(f)
+
+    html = ""
+
+    for i, form in enumerate(data):
+        html += f"""
+        <div style="background:#2b2d31;padding:15px;border-radius:10px;margin:10px;">
+            Usuario: {form['user']}<br>
+            {form['answers']}<br><br>
+            <a href="/reply/{i}" style="background:#5865F2;padding:5px;color:white;">Responder</a>
+        </div>
+        """
+
+    return HTMLResponse(f"""
+    <body style="background:#313338;color:white;font-family:Arial;">
+    <div style="margin-left:240px;padding:20px;">
+        <h1>Formularios</h1>
+        {html}
+    </div>
+    </body>
+    """)
+
+
+# =========================
+# 💬 RESPONDER FORM
+# =========================
+@app.get("/reply/{index}", response_class=HTMLResponse)
+def reply_form(index: int):
+    return HTMLResponse(f"""
+    <form action="/send/{index}" method="post">
+        <input name="msg" placeholder="Mensaje">
+        <button type="submit">Enviar</button>
+    </form>
+    """)
+
+
+@app.post("/send/{index}")
+async def send_reply(index: int, request: Request):
+
+    form = await request.form()
+    msg = form.get("msg")
+
+    with open(FORMS_RESPONSES, "r") as f:
+        data = json.load(f)
+
+    user_name = data[index]["user"]
+
+    bot = get_bot()
+
+    for guild in bot.guilds:
+        for member in guild.members:
+            if str(member) == user_name:
+                try:
+                    await member.send(msg)
+                except:
+                    pass
+
+    return RedirectResponse("/forms", status_code=303)
