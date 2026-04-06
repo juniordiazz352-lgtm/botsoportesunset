@@ -1,24 +1,19 @@
-import discord
 from core.db import cursor
+import json
 
+def save_form(name, questions):
+    cursor.execute("INSERT OR REPLACE INTO forms VALUES (?, ?)", (name, json.dumps(questions)))
+    cursor.connection.commit()
 
-async def get_config(guild, key):
-    cursor.execute("SELECT valor FROM config WHERE clave=?", (key,))
-    data = cursor.fetchone()
-    if not data:
-        return None
-    return guild.get_channel(int(data[0])) or guild.get_role(int(data[0]))
+def get_forms():
+    cursor.execute("SELECT * FROM forms")
+    import json
+    return {name: json.loads(q) for name, q in cursor.fetchall()}
 
-
-async def send_log(guild, message):
-
-    cursor.execute("SELECT valor FROM config WHERE clave='logs_channel'")
-    data = cursor.fetchone()
-
-    if not data:
-        return
-
-    canal = guild.get_channel(int(data[0]))
-
-    if canal:
-        await canal.send(message)
+def save_response(user_id, form_name, answers):
+    import json
+    cursor.execute(
+        "INSERT INTO form_responses (user_id, form_name, answers) VALUES (?, ?, ?)",
+        (user_id, form_name, json.dumps(answers))
+    )
+    cursor.connection.commit()
