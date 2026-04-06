@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import asyncio
 import os
+from bot.utils.bot_api import set_bot
+set_bot(bot)
 
 intents = discord.Intents.default()
 intents.message_content = True
