@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from core.db import cursor, conn
-from views.ticket_panel import TicketPanelView
+from bot.core.db import cursor, conn
+from bot.views.ticket_panel import TicketPanelView
 
 
 class Tickets(commands.Cog):
