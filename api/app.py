@@ -4,52 +4,39 @@ import httpx
 import sqlite3
 import json
 import os
+from bot.utils.bot_api import get_bot
 
 app = FastAPI()
 
-# =========================
 # 🔑 CONFIG
-# =========================
 CLIENT_ID = "TU_CLIENT_ID"
 CLIENT_SECRET = "TU_CLIENT_SECRET"
 REDIRECT_URI = "https://tu-app.onrender.com/callback"
+
+STAFF_ROLE_ID = 1472478801710678258
 
 DB_PATH = "tickets.db"
 FORMS_RESPONSES = "form_responses.json"
 
 
 # =========================
-# 🏠 HOME
-# =========================
-@app.get("/", response_class=HTMLResponse)
-def home():
-    return """
-    <html>
-    <body style="background:#111;color:#eee;font-family:Arial;">
-        <h1>🌐 Panel Admin</h1>
-        <a href="/login">🔑 Iniciar sesión con Discord</a>
-    </body>
-    </html>
-    """
-
-
-# =========================
-# 🔑 LOGIN
+# 🔐 LOGIN
 # =========================
 @app.get("/login")
 def login():
     return RedirectResponse(
-        f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify"
+        f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify%20guilds.members.read"
     )
 
 
 # =========================
-# 🔁 CALLBACK
+# 🔁 CALLBACK (CHECK STAFF)
 # =========================
 @app.get("/callback", response_class=HTMLResponse)
 async def callback(code: str):
 
     async with httpx.AsyncClient() as client:
+
         data = {
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
@@ -72,20 +59,26 @@ async def callback(code: str):
 
         user_json = user.json()
 
-    return f"""
-    <html>
-    <body style="background:#111;color:#eee;font-family:Arial;">
-        <h1>Bienvenido {user_json['username']}</h1>
+    # 🔥 SOLO STAFF
+    bot = get_bot()
+    guild = bot.guilds[0]
+    member = guild.get_member(int(user_json["id"]))
 
-        <a href="/tickets">🎫 Ver Tickets</a><br><br>
-        <a href="/forms">📋 Ver Formularios</a>
+    if not member or not any(role.id == STAFF_ROLE_ID for role in member.roles):
+        return "<h1>❌ No autorizado</h1>"
+
+    return f"""
+    <body style='background:#111;color:#eee'>
+    <h1>Bienvenido {user_json['username']}</h1>
+
+    <a href="/tickets">🎫 Tickets</a><br>
+    <a href="/forms">📋 Formularios</a>
     </body>
-    </html>
     """
 
 
 # =========================
-# 🎫 TICKETS
+# 🎫 TICKETS (REAL)
 # =========================
 @app.get("/tickets", response_class=HTMLResponse)
 def tickets():
@@ -95,28 +88,33 @@ def tickets():
 
     cursor.execute("SELECT * FROM tickets")
     rows = cursor.fetchall()
-
     conn.close()
 
-    html = "<h1>🎫 Tickets</h1>"
+    html = "<h1>Tickets</h1>"
 
     for row in rows:
         html += f"""
-        <div style='border:1px solid #333;padding:10px;margin:10px;'>
-            Channel ID: {row[0]}<br>
-            User ID: {row[1]}<br>
-            <a href="/close_ticket/{row[0]}">❌ Cerrar Ticket</a>
-        </div>
+        <div>
+        Canal: {row[0]}<br>
+        Usuario: {row[1]}<br>
+        <a href="/close/{row[0]}">Cerrar</a>
+        </div><hr>
         """
 
-    return f"<body style='background:#111;color:#eee'>{html}</body>"
+    return html
 
 
 # =========================
-# ❌ CERRAR TICKET (WEB)
+# ❌ CERRAR TICKET REAL
 # =========================
-@app.get("/close_ticket/{channel_id}")
-def close_ticket(channel_id: int):
+@app.get("/close/{channel_id}")
+async def close_ticket(channel_id: int):
+
+    bot = get_bot()
+    channel = bot.get_channel(channel_id)
+
+    if channel:
+        await channel.delete()
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -129,7 +127,7 @@ def close_ticket(channel_id: int):
 
 
 # =========================
-# 📋 FORMULARIOS (RESPUESTAS)
+# 📋 FORMULARIOS
 # =========================
 @app.get("/forms", response_class=HTMLResponse)
 def forms():
@@ -140,40 +138,53 @@ def forms():
     with open(FORMS_RESPONSES, "r") as f:
         data = json.load(f)
 
-    html = "<h1>📋 Formularios</h1>"
+    html = "<h1>Formularios</h1>"
 
     for i, form in enumerate(data):
         html += f"""
-        <div style='border:1px solid #333;padding:10px;margin:10px;'>
-            Usuario: {form['user']}<br>
-            Respuestas: {form['answers']}<br>
-            <a href="/reply_form/{i}">💬 Responder</a>
-        </div>
+        <div>
+        Usuario: {form['user']}<br>
+        {form['answers']}<br>
+        <a href="/reply/{i}">Responder</a>
+        </div><hr>
         """
 
-    return f"<body style='background:#111;color:#eee'>{html}</body>"
+    return html
 
 
 # =========================
-# 💬 RESPONDER FORM (WEB)
+# 💬 RESPONDER REAL
 # =========================
-@app.get("/reply_form/{index}", response_class=HTMLResponse)
+@app.get("/reply/{index}", response_class=HTMLResponse)
 def reply_form(index: int):
-
     return f"""
-    <form action="/send_reply/{index}" method="post">
-        <input name="msg" placeholder="Mensaje"><br>
-        <button type="submit">Enviar</button>
+    <form action="/send/{index}" method="post">
+        <input name="msg">
+        <button>Enviar</button>
     </form>
     """
 
 
-@app.post("/send_reply/{index}")
+@app.post("/send/{index}")
 async def send_reply(index: int, request: Request):
 
     form = await request.form()
     msg = form.get("msg")
 
-    print("Respuesta enviada:", msg)
+    with open(FORMS_RESPONSES, "r") as f:
+        data = json.load(f)
+
+    user_name = data[index]["user"]
+
+    bot = get_bot()
+
+    # buscar usuario real
+    for guild in bot.guilds:
+        for member in guild.members:
+            if str(member) == user_name:
+                try:
+                    await member.send(msg)
+                except:
+                    pass
 
     return RedirectResponse("/forms", status_code=303)
