@@ -2,6 +2,8 @@ import discord
 from core.db import cursor
 from bot.views.ticket_controls import TicketControlsView
 
+cooldowns = {}
+
 class TicketPanelView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -19,7 +21,18 @@ class TicketButton(discord.ui.Button):
             label=nombre,
             emoji=emoji,
             style=discord.ButtonStyle.blurple
-        )
+        import time
+
+user_id = interaction.user.id
+now = time.time()
+
+if user_id in cooldowns and now - cooldowns[user_id] < 10:
+    return await interaction.response.send_message(
+        "⏳ Espera antes de crear otro ticket.",
+        ephemeral=True
+    )
+
+cooldowns[user_id] = now)
         self.nombre = nombre
 
     async def callback(self, interaction: discord.Interaction):
