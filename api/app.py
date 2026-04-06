@@ -9,9 +9,9 @@ from bot.utils.bot_api import get_bot
 app = FastAPI()
 
 # 🔑 CONFIG
-CLIENT_ID = "TU_CLIENT_ID"
-CLIENT_SECRET = "TU_CLIENT_SECRET"
-REDIRECT_URI = "https://tu-app.onrender.com/callback"
+CLIENT_ID = 1485387890786697380
+CLIENT_SECRET = eKd8rNscVk3QXcSrVu0jUr3wiqO9fAiY
+REDIRECT_URI = https://botsoportesunset.onrender.com/callback
 
 STAFF_ROLE_ID = 1472478801710678258
 
@@ -188,3 +188,59 @@ async def send_reply(index: int, request: Request):
                     pass
 
     return RedirectResponse("/forms", status_code=303)
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return """
+    <html>
+    <head>
+    <style>
+    body { margin:0; font-family:Arial; background:#313338; color:#fff; }
+    .sidebar {
+        width:220px; height:100vh;
+        background:#1e1f22; position:fixed;
+        padding:20px;
+    }
+    .sidebar h2 { color:#5865F2; }
+    .sidebar a {
+        display:block; color:#ccc;
+        margin:10px 0; text-decoration:none;
+    }
+    .content {
+        margin-left:240px; padding:20px;
+    }
+    .card {
+        background:#2b2d31;
+        padding:15px;
+        border-radius:10px;
+        margin:10px 0;
+    }
+    .btn {
+        background:#5865F2;
+        padding:6px 10px;
+        border-radius:5px;
+        text-decoration:none;
+        color:white;
+    }
+    .danger { background:#ed4245; }
+    </style>
+    </head>
+
+    <body>
+
+    <div class="sidebar">
+        <h2>🌐 Panel</h2>
+        <a href="/dashboard">🏠 Inicio</a>
+        <a href="/tickets">🎫 Tickets</a>
+        <a href="/forms">📋 Formularios</a>
+        <a href="/login">🔑 Login</a>
+    </div>
+
+    <div class="content">
+        <h1>Bienvenido al Panel</h1>
+        <p>Sistema profesional conectado a Discord</p>
+    </div>
+
+    </body>
+    </html>
+    """
