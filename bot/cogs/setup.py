@@ -8,17 +8,13 @@ class Setup(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def setup(self, ctx):
+        """Abre el panel de configuración"""
 
-        embed = discord.Embed(
-            title="⚙️ Panel de Configuración",
-            description="Usa los botones para configurar o ver el estado",
-            color=discord.Color.blurple()
+        view = SetupView(self.bot, ctx.guild)
+
+        await ctx.send(
+            embed=view.get_embed(),
+            view=view
         )
-
-        await ctx.send(embed=embed, view=SetupView(self.bot, ctx.guild))
-
-
-async def setup(bot):
-    await bot.add_cog(Setup(bot))
