@@ -6,30 +6,53 @@ class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="help")
-    async def help_command(self, ctx):
+    @commands.command()
+    async def help(self, ctx):
 
         embed = discord.Embed(
             title="📖 Comandos del Bot",
-            description="Lista completa de comandos disponibles:",
+            description="Lista oficial de comandos disponibles",
             color=discord.Color.blurple()
         )
 
-        for cog_name, cog in self.bot.cogs.items():
-            comandos = []
+        # ⚙️ Setup
+        embed.add_field(
+            name="⚙️ Setup",
+            value="`!setup`",
+            inline=False
+        )
 
-            for command in cog.get_commands():
-                if not command.hidden:
-                    comandos.append(f"`!{command.name}`")
+        # 🎫 Tickets
+        embed.add_field(
+            name="🎫 Tickets",
+            value=(
+                "`!crear_ticket_tipo` → crear tipo de ticket\n"
+                "`!panel_ticket` → enviar panel de tickets\n"
+                "`!agregar_usuario` → añadir usuario al ticket\n"
+                "`!quitar_usuario` → quitar usuario del ticket"
+            ),
+            inline=False
+        )
 
-            if comandos:
-                embed.add_field(
-                    name=f"📂 {cog_name}",
-                    value=" ".join(comandos),
-                    inline=False
-                )
+        # 📋 Formularios
+        embed.add_field(
+            name="📋 Formularios",
+            value="`!panel_form` → enviar panel de formularios",
+            inline=False
+        )
 
-        embed.set_footer(text="Sistema de soporte")
+        # 🎨 Utilidades
+        embed.add_field(
+            name="🎨 Utilidades",
+            value=(
+                "`!say` → el bot habla por ti\n"
+                "`!embed` → crear embed interactivo\n"
+                "`!crear_embed` → crear embed rápido"
+            ),
+            inline=False
+        )
+
+        embed.set_footer(text="Sistema Sunset Boulevard")
 
         await ctx.send(embed=embed)
 
