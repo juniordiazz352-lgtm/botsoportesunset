@@ -15,30 +15,34 @@ class Setup(commands.Cog):
         await ctx.message.delete()
 
         embed = discord.Embed(
-            title="⚙️ Panel de Configuración",
-            description="Configura el sistema del bot",
+            title="⚙️ Setup GOD++",
+            description="Configura el bot usando el menú interactivo",
             color=discord.Color.blurple()
         )
 
         embed.add_field(
             name="🎟️ Tickets",
-            value="Configurar categoría de tickets",
+            value="Configura categoría de tickets",
             inline=False
         )
 
         embed.add_field(
             name="📋 Formularios",
-            value="Configurar canal de formularios",
+            value="Configura canal de logs/forms",
             inline=False
         )
 
         embed.add_field(
             name="🛠️ Staff",
-            value="Configurar rol staff",
+            value="Configura rol staff",
             inline=False
         )
 
-        embed.set_footer(text=f"Setup por {ctx.author}")
+        embed.add_field(
+            name="📊 Estado",
+            value="Ver configuración actual",
+            inline=False
+        )
 
         await ctx.send(embed=embed, view=SetupView(self.bot))
 
