@@ -6,72 +6,76 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # 🧹 CLEAR MENSAJES
+    @commands.command(name="clear", help="Borra mensajes. Uso: !clear <cantidad> o !clear all")
+    @commands.has_permissions(manage_messages=True)
+    async def clear(self, ctx, amount: str = None):
+
+        if not amount:
+            return await ctx.send("❌ Uso: `!clear <cantidad>` o `!clear all`")
+
+        # 🔥 BORRAR TODO
+        if amount.lower() == "all":
+
+            await ctx.send("⚠️ ¿Seguro que quieres borrar TODOS los mensajes? Escribe `confirmar`")
+
+            def check(m):
+                return m.author == ctx.author and m.channel == ctx.channel
+
+            try:
+                msg = await self.bot.wait_for("message", check=check, timeout=15)
+
+                if msg.content.lower() != "confirmar":
+                    return await ctx.send("❌ Cancelado")
+
+                deleted = await ctx.channel.purge(limit=1000)
+                return await ctx.send(f"🧹 {len(deleted)} mensajes eliminados", delete_after=5)
+
+            except:
+                return await ctx.send("⏳ Tiempo agotado")
+
+        # 🔢 BORRAR CANTIDAD
+        if not amount.isdigit():
+            return await ctx.send("❌ Debes poner un número o `all`")
+
+        amount = int(amount)
+
+        if amount > 100:
+            return await ctx.send("❌ Máximo 100 mensajes")
+
+        deleted = await ctx.channel.purge(limit=amount + 1)
+
+        msg = await ctx.send(f"🧹 {len(deleted)-1} mensajes eliminados")
+        await msg.delete(delay=5)
+
     # 📢 SAY
-    @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.command(name="say", help="El bot repite tu mensaje")
     async def say(self, ctx, *, mensaje):
 
         await ctx.message.delete()
+        await ctx.send(mensaje)
+
+    # 📣 ANUNCIO EMBED
+    @commands.command(name="anuncio", help="Crear anuncio con embed")
+    async def anuncio(self, ctx):
+
+        def check(m): return m.author == ctx.author and m.channel == ctx.channel
+
+        await ctx.send("📝 Título:")
+        titulo = (await self.bot.wait_for("message", check=check)).content
+
+        await ctx.send("📄 Descripción:")
+        descripcion = (await self.bot.wait_for("message", check=check)).content
 
         embed = discord.Embed(
-            description=mensaje,
-            color=discord.Color.blurple()
-        )
-
-        await ctx.send(embed=embed)
-
-    # 📣 ANUNCIO
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def anuncio(self, ctx, titulo, *, descripcion):
-
-        embed = discord.Embed(
-            title=f"📢 {titulo}",
+            title=titulo,
             description=descripcion,
             color=discord.Color.gold()
         )
 
         embed.set_footer(text=f"Anuncio por {ctx.author}")
-        embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-        embed.set_timestamp()
 
         await ctx.send(embed=embed)
-
-
-class Admin(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    # 📜 LISTA DE COMANDOS PRO
-    @commands.command(name="comandos")
-    async def comandos(self, ctx):
-
-        embed = discord.Embed(
-            title="📖 Lista de Comandos",
-            description="Aquí tienes todos los comandos disponibles del bot",
-            color=discord.Color.blurple()
-        )
-
-        for cog_name, cog in self.bot.cogs.items():
-
-            comandos = []
-
-            for command in cog.get_commands():
-                if not command.hidden:
-                   comandos.append(f"`!{command.name}` - {command.help or 'Sin descripción'}")
-
-            if comandos:
-                embed.add_field(
-                    name=f"📂 {cog_name}",
-                    value=" ".join(comandos),
-                    inline=False
-                )
-
-        embed.set_footer(text=f"Solicitado por {ctx.author}")
-        embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-
-        await ctx.send(embed=embed)
-
 
 
 async def setup(bot):
