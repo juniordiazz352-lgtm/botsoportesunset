@@ -12,7 +12,7 @@ async def setup_bot():
     await bot.load_extension("bot.cogs.panel_creator")
     await bot.load_extension("bot.cogs.setup")
     await bot.load_extension("bot.cogs.utilidades")
-    
+    await bot.load_extension("bot.cogs.help")
 
 @bot.event
 async def on_ready():
