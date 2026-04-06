@@ -1,5 +1,5 @@
 import discord
-from core.utils import save_response, get_forms
+from core.utils import save_response
 from bot.views.form_review import FormReviewView
 
 
@@ -8,7 +8,6 @@ class FormPanelView(discord.ui.View):
         super().__init__(timeout=None)
 
         options = [discord.SelectOption(label=name) for name in forms]
-
         self.add_item(FormSelect(forms, options))
 
 
@@ -19,15 +18,19 @@ class FormSelect(discord.ui.Select):
 
     async def callback(self, interaction):
 
+        data = self.forms[self.values[0]]
+
         nombre = self.values[0]
-        preguntas = self.forms[nombre]
+        preguntas = data["questions"]
+        canal_id = data["channel_id"]
+
         respuestas = []
 
         try:
-            await interaction.user.send(f"📋 **Formulario:** {nombre}")
+            await interaction.user.send(f"📋 Formulario: {nombre}")
 
             for p in preguntas:
-                await interaction.user.send(f"❓ {p}")
+                await interaction.user.send(p)
 
                 def check(m):
                     return m.author == interaction.user and isinstance(m.channel, discord.DMChannel)
@@ -37,20 +40,18 @@ class FormSelect(discord.ui.Select):
 
             save_response(interaction.user.id, nombre, respuestas)
 
-            from core.db import cursor
-            cursor.execute("SELECT valor FROM config WHERE clave='forms_channel'")
-            canal = interaction.guild.get_channel(int(cursor.fetchone()[0]))
+            canal = interaction.guild.get_channel(canal_id)
 
-            embed = discord.Embed(title=f"📋 {nombre}", color=discord.Color.blue())
+            embed = discord.Embed(title=nombre, color=discord.Color.blue())
 
             for p, r in zip(preguntas, respuestas):
                 embed.add_field(name=p, value=r, inline=False)
 
-            embed.set_footer(text=f"Usuario:{interaction.user.id}|Form:{nombre}")
+            embed.set_footer(text=f"user:{interaction.user.id}|form:{nombre}")
 
             await canal.send(embed=embed, view=FormReviewView())
 
-            await interaction.response.send_message("📩 Formulario enviado", ephemeral=True)
+            await interaction.response.send_message("📩 Revisa DM", ephemeral=True)
 
         except:
-            await interaction.response.send_message("❌ Activa tus DM", ephemeral=True)
+            await interaction.response.send_message("❌ DM desactivados", ephemeral=True)
