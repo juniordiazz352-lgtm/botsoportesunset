@@ -58,7 +58,7 @@ class Admin(commands.Cog):
 
             for command in cog.get_commands():
                 if not command.hidden:
-                    comandos.append(f"`!{command.name}`")
+                   comandos.append(f"`!{command.name}` - {command.help or 'Sin descripción'}")
 
             if comandos:
                 embed.add_field(
