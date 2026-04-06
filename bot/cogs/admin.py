@@ -6,47 +6,119 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # 🧹 CLEAR MENSAJES
-    @commands.command(name="clear", help="Borra mensajes. Uso: !clear <cantidad> o !clear all")
+    # 💎 LISTA EMBED GOD
+    @commands.command(name="comandos", help="Muestra todos los comandos del bot")
+    async def comandos(self, ctx):
+
+        await ctx.message.delete()
+
+        embed = discord.Embed(
+            title="📖 Panel de Comandos",
+            description="Sistema completo del bot",
+            color=discord.Color.blurple()
+        )
+
+        # 🎟️ Tickets
+        embed.add_field(
+            name="🎟️ Tickets",
+            value=(
+                "`!panelticket`\n"
+                "Crear panel de tickets dinámico"
+            ),
+            inline=False
+        )
+
+        # 📋 Forms
+        embed.add_field(
+            name="📋 Formularios",
+            value=(
+                "`!crearform`\nCrear formulario con preguntas y canal\n\n"
+                "`!panelform`\nCrear panel seleccionando formularios"
+            ),
+            inline=False
+        )
+
+        # 🛠️ Admin
+        embed.add_field(
+            name="🛠️ Administración",
+            value=(
+                "`!clear <cantidad/all>`\nBorrar mensajes\n\n"
+                "`!say <mensaje>`\nEnviar mensaje como bot\n\n"
+                "`!anuncio`\nCrear anuncio embed"
+            ),
+            inline=False
+        )
+
+        # 📖 Info
+        embed.add_field(
+            name="📖 Información",
+            value=(
+                "`!help`\nMenú interactivo\n\n"
+                "`!comandos`\nLista de comandos"
+            ),
+            inline=False
+        )
+
+        embed.set_footer(text=f"Solicitado por {ctx.author}")
+        if ctx.guild.icon:
+            embed.set_thumbnail(url=ctx.guild.icon.url)
+
+        await ctx.send(embed=embed)
+
+    # 🧹 CLEAR PRO LIMPIO
+    @commands.command(name="clear", help="Borra mensajes")
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx, amount: str = None):
 
-        if not amount:
-            return await ctx.send("❌ Uso: `!clear <cantidad>` o `!clear all`")
+        await ctx.message.delete()
 
-        # 🔥 BORRAR TODO
+        if not amount:
+            msg = await ctx.send("❌ Uso: !clear <cantidad> o !clear all")
+            return await msg.delete(delay=5)
+
+        # 💀 BORRAR TODO
         if amount.lower() == "all":
 
-            await ctx.send("⚠️ ¿Seguro que quieres borrar TODOS los mensajes? Escribe `confirmar`")
+            msg = await ctx.send("⚠️ Escribe `confirmar` para borrar todo")
 
             def check(m):
                 return m.author == ctx.author and m.channel == ctx.channel
 
             try:
-                msg = await self.bot.wait_for("message", check=check, timeout=15)
+                confirm = await self.bot.wait_for("message", check=check, timeout=15)
 
-                if msg.content.lower() != "confirmar":
-                    return await ctx.send("❌ Cancelado")
+                if confirm.content.lower() != "confirmar":
+                    cancel = await ctx.send("❌ Cancelado")
+                    return await cancel.delete(delay=5)
+
+                await confirm.delete()
 
                 deleted = await ctx.channel.purge(limit=1000)
-                return await ctx.send(f"🧹 {len(deleted)} mensajes eliminados", delete_after=5)
+
+                info = await ctx.send(f"🧹 {len(deleted)} mensajes eliminados")
+                await info.delete(delay=5)
 
             except:
-                return await ctx.send("⏳ Tiempo agotado")
+                timeout = await ctx.send("⏳ Tiempo agotado")
+                await timeout.delete(delay=5)
 
-        # 🔢 BORRAR CANTIDAD
+            return
+
+        # 🔢 BORRAR NORMAL
         if not amount.isdigit():
-            return await ctx.send("❌ Debes poner un número o `all`")
+            msg = await ctx.send("❌ Debe ser número o all")
+            return await msg.delete(delay=5)
 
         amount = int(amount)
 
         if amount > 100:
-            return await ctx.send("❌ Máximo 100 mensajes")
+            msg = await ctx.send("❌ Máximo 100")
+            return await msg.delete(delay=5)
 
         deleted = await ctx.channel.purge(limit=amount + 1)
 
-        msg = await ctx.send(f"🧹 {len(deleted)-1} mensajes eliminados")
-        await msg.delete(delay=5)
+        info = await ctx.send(f"🧹 {len(deleted)-1} mensajes eliminados")
+        await info.delete(delay=5)
 
     # 📢 SAY
     @commands.command(name="say", help="El bot repite tu mensaje")
@@ -55,21 +127,27 @@ class Admin(commands.Cog):
         await ctx.message.delete()
         await ctx.send(mensaje)
 
-    # 📣 ANUNCIO EMBED
-    @commands.command(name="anuncio", help="Crear anuncio con embed")
+    # 📣 ANUNCIO PRO
+    @commands.command(name="anuncio", help="Crear anuncio embed")
     async def anuncio(self, ctx):
+
+        await ctx.message.delete()
 
         def check(m): return m.author == ctx.author and m.channel == ctx.channel
 
-        await ctx.send("📝 Título:")
-        titulo = (await self.bot.wait_for("message", check=check)).content
+        msg1 = await ctx.send("📝 Título:")
+        titulo_msg = await self.bot.wait_for("message", check=check)
+        await msg1.delete()
+        await titulo_msg.delete()
 
-        await ctx.send("📄 Descripción:")
-        descripcion = (await self.bot.wait_for("message", check=check)).content
+        msg2 = await ctx.send("📄 Descripción:")
+        desc_msg = await self.bot.wait_for("message", check=check)
+        await msg2.delete()
+        await desc_msg.delete()
 
         embed = discord.Embed(
-            title=titulo,
-            description=descripcion,
+            title=titulo_msg.content,
+            description=desc_msg.content,
             color=discord.Color.gold()
         )
 
