@@ -35,8 +35,7 @@ class TicketButton(discord.ui.Button):
             f"{user.mention}",
             embed=discord.Embed(
                 title="🎫 Ticket abierto",
-                description="El Equipo de Soporte te respondera en un momento,No tienen un horario definido pero llegaran en breve
-                Recuerda que tienes 24 horas para responder o de lo contrario el ticket se cerrara",
+                description="El Equipo de Soporte te respondera en un momento,No tienen un horario definido pero llegaran en breve,porfavor se paciente",
                 color=discord.Color.green()
             ),
             view=TicketControlsView()
