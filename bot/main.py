@@ -12,14 +12,6 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 from bot.utils.bot_api import set_bot
 set_bot(bot)
 
-async def setup_bot():
-    await bot.load_extension("bot.cogs.ticket")
-    await bot.load_extension("bot.cogs.forms")
-    await bot.load_extension("bot.cogs.panel_creator")
-    await bot.load_extension("bot.cogs.setup")
-    await bot.load_extension("bot.cogs.utilidades")
-    await bot.load_extension("bot.cogs.help")
-
 @bot.event
 async def on_ready():
     print(f"✅ {bot.user} listo")
