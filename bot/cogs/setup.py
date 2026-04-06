@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from views.setup_view import SetupView
+from bot.views.setup_view import SetupView
 
 
 class Setup(commands.Cog):
