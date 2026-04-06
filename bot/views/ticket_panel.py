@@ -1,10 +1,6 @@
 import discord
-from discord.ext import commands
-from core.db import cursor, conn
+from bot.core.db import cursor
 from bot.views.ticket_controls import TicketControlsView
-
-MAX_TICKETS = 4
-
 
 class TicketPanelView(discord.ui.View):
     def __init__(self):
@@ -31,75 +27,18 @@ class TicketButton(discord.ui.Button):
         guild = interaction.guild
         user = interaction.user
 
-        # 🚫 LIMITE DE 4 TICKETS
-        cursor.execute(
-            "SELECT COUNT(*) FROM tickets WHERE user_id=? AND estado='abierto'",
-            (user.id,)
-        )
-        count = cursor.fetchone()[0]
-
-        if count >= MAX_TICKETS:
-            return await interaction.response.send_message(
-                "❌ Ya tienes 4 tickets abiertos",
-                ephemeral=True
-            )
-
-        # 📁 categoría
-        cursor.execute(
-            "SELECT categoria_id FROM ticket_types WHERE nombre=?",
-            (self.nombre,)
-        )
-        data = cursor.fetchone()
-
-        categoria = guild.get_channel(data[0]) if data else None
-
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            user: discord.PermissionOverwrite(read_messages=True),
-            guild.me: discord.PermissionOverwrite(read_messages=True)
-        }
-
         channel = await guild.create_text_channel(
-            name=f"{self.nombre}-{user.name}",
-            overwrites=overwrites,
-            category=categoria
+            f"{self.nombre}-{user.name}"
         )
-        from bot.core.logger import enviar_log
-
-log = discord.Embed(
-    title="🎫 Ticket abierto",
-    color=discord.Color.green()
-)
-log.add_field(name="Usuario", value=interaction.user.mention)
-log.add_field(name="Tipo", value=self.nombre)
-log.add_field(name="Canal", value=channel.mention)
-
-await enviar_log(interaction.guild, log)
-
-cursor.execute(
-"INSERT INTO tickets VALUES (?, ?, ?, ?, ?)",
-(user.id, channel.id, self.nombre, "abierto", None)
-        )
-        conn.commit()
-
-        # 📩 MENSAJE QUE PEDISTE
-        embed = discord.Embed(
-            title="🎫 Ticket abierto",
-            description=(
-                "Has abierto un ticket.\n\n"
-                "El staff no tiene un horario establecido para responder el ticket,\n"
-                "pero te llamarán en breve.\n\n"
-                "⏰ Recuerda que únicamente tienes 24 horas para responder."
-            ),
-            color=discord.Color.green()
-        )
-
-        from bot.core.logger import enviar_log
-
 
         await channel.send(
-            content=user.mention,
-            embed=embed,
+            f"{user.mention}",
+            embed=discord.Embed(
+                title="🎫 Ticket abierto",
+                description="El Equipo de Soporte te respondera en un momento,No tienen un horario definido pero llegaran en breve
+                Recuerda que tienes 24 horas para responder o de lo contrario el ticket se cerrara",
+                color=discord.Color.green()
+            ),
             view=TicketControlsView()
         )
 
