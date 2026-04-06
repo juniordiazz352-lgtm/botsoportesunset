@@ -25,6 +25,20 @@ async def on_ready():
     bot.add_view(TicketControlsView())
 
 @bot.event
+async def on_command_error(ctx, error):
+
+    if isinstance(error, commands.MissingPermissions):
+        return await ctx.send("❌ No tienes permisos.")
+
+    if isinstance(error, commands.MissingRequiredArgument):
+        return await ctx.send("⚠️ Argumentos faltantes.")
+
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    print(f"ERROR: {error}")
+
+@bot.event
 async def on_ready():
     await bot.tree.sync()
     print("Comandos sincronizados")
@@ -33,6 +47,16 @@ async def main():
     async with bot:
         await setup_bot()
         await bot.start(os.getenv("TOKEN"))
+
+
+async def setup_bot():
+    for filename in os.listdir("./bot/cogs"):
+        if filename.endswith(".py"):
+            try:
+                await bot.load_extension(f"bot.cogs.{filename[:-3]}")
+                print(f"✅ Cargado: {filename}")
+            except Exception as e:
+                print(f"❌ Error en {filename}: {e}")
 
 def run_bot():
     asyncio.run(main())
