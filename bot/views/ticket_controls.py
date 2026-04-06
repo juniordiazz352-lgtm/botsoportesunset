@@ -5,7 +5,7 @@ import datetime
 import io
 
 DB_PATH = "tickets.db"
-STAFF_ROLE_ID = 123456789012345678  # 🔥 CAMBIAR POR TU ROL STAFF
+STAFF_ROLE_ID = 1472478801710678258  # 🔥 CAMBIAR POR TU ROL STAFF
 
 class TicketControlsView(View):
     def __init__(self):
