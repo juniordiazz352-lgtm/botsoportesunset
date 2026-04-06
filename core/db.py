@@ -18,4 +18,11 @@ CREATE TABLE IF NOT EXISTS ticket_types (
 )
 """)
 
+cursor.execute("""
+CREATE TABLE tickets (
+    channel_id INTEGER,
+    user_id INTEGER,
+    claimed_by INTEGER
+);
+""")
 conn.commit()
