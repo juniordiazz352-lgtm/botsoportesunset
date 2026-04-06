@@ -38,5 +38,41 @@ class Admin(commands.Cog):
         await ctx.send(embed=embed)
 
 
+class Admin(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    # 📜 LISTA DE COMANDOS PRO
+    @commands.command(name="comandos")
+    async def comandos(self, ctx):
+
+        embed = discord.Embed(
+            title="📖 Lista de Comandos",
+            description="Aquí tienes todos los comandos disponibles del bot",
+            color=discord.Color.blurple()
+        )
+
+        for cog_name, cog in self.bot.cogs.items():
+
+            comandos = []
+
+            for command in cog.get_commands():
+                if not command.hidden:
+                    comandos.append(f"`!{command.name}`")
+
+            if comandos:
+                embed.add_field(
+                    name=f"📂 {cog_name}",
+                    value=" ".join(comandos),
+                    inline=False
+                )
+
+        embed.set_footer(text=f"Solicitado por {ctx.author}")
+        embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+
+        await ctx.send(embed=embed)
+
+
+
 async def setup(bot):
     await bot.add_cog(Admin(bot))
