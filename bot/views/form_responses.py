@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from bot.core.db import cursor
+from core.db import cursor
 
 
 class FormResponses(commands.Cog):
