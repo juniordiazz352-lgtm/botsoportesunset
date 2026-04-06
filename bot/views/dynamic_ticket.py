@@ -1,7 +1,7 @@
 import discord
 from core.db import cursor
 from bot.views.ticket_actions import TicketActions
-from core.utils import send_log
+from core.utils import create_ticket
 
 
 class DynamicTicketView(discord.ui.View):
@@ -30,23 +30,36 @@ class TicketButton(discord.ui.Button):
 
         category = guild.get_channel(int(data[0]))
 
+        # anti duplicados
         for ch in category.channels:
             if ch.topic and str(user.id) in ch.topic:
-                return await interaction.response.send_message("❌ Ya tienes un ticket", ephemeral=True)
+                return await interaction.response.send_message(
+                    "❌ Ya tienes un ticket",
+                    ephemeral=True
+                )
 
         channel = await category.create_text_channel(
             name=f"{self.nombre_ticket}-{user.name}",
             topic=str(user.id)
         )
 
-        await send_log(guild, f"🎟️ Ticket creado por {user} ({self.nombre_ticket})")
+        create_ticket(channel.id, user.id, self.nombre_ticket)
 
         embed = discord.Embed(
             title=f"🎟️ {self.nombre_ticket}",
-            description="Usa los botones abajo",
+            description="Usa los botones para gestionar el ticket",
             color=discord.Color.green()
         )
 
-        await channel.send(content=user.mention, embed=embed, view=TicketActions())
+        from bot.views.ticket_actions import TicketActions
 
-        await interaction.response.send_message(f"✅ {channel.mention}", ephemeral=True)
+        await channel.send(
+            content=user.mention,
+            embed=embed,
+            view=TicketActions()
+        )
+
+        await interaction.response.send_message(
+            f"✅ Ticket creado: {channel.mention}",
+            ephemeral=True
+        )
