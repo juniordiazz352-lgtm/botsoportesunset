@@ -25,6 +25,9 @@ class FormSelect(Select):
                 )
 
         except:
+            pass
+
+        if not options:
             options.append(
                 discord.SelectOption(
                     label="No hay formularios",
@@ -43,12 +46,12 @@ class FormSelect(Select):
 
     async def callback(self, interaction: discord.Interaction):
 
-        form_name = self.values[0]
+        form_name = self.values[0].lower()
 
         with open(FORMS_FILE, "r") as f:
             data = json.load(f)
 
-        preguntas = data.get(form_name.lower(), [])
+        preguntas = data.get(form_name, [])
 
         modal = DynamicFormModal(form_name, preguntas)
 
@@ -58,5 +61,4 @@ class FormSelect(Select):
 class FormPanel(View):
     def __init__(self):
         super().__init__(timeout=None)
-
         self.add_item(FormSelect())
