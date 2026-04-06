@@ -1,69 +1,65 @@
 import discord
 from discord.ext import commands
+import json
+from bot.utils.perms import is_admin
+from bot.views.ticket_panel import TicketPanelView
 
-
-class PanelCreator(commands.Cog):
+class Utilidades(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # 🗣 SAY (el bot habla por ti)
+    # =========================
+    # 📢 SAY
+    # =========================
     @commands.command()
-    @commands.is_owner()
+    @is_admin()
     async def say(self, ctx, *, mensaje):
-
-        await ctx.message.delete()  # borra tu mensaje
+        await ctx.message.delete()
         await ctx.send(mensaje)
 
-
-    # 🎨 EMBED (panel personalizado)
+    # =========================
+    # 📦 EMBED PRO
+    # =========================
     @commands.command()
-    @commands.is_owner()
-    async def embed(self, ctx):
-
-        def check(m):
-            return m.author == ctx.author
-
-        # 📝 título
-        await ctx.send("📝 Escribe el título del embed:")
-        titulo = (await self.bot.wait_for("message", check=check)).content
-
-        # 📄 descripción
-        await ctx.send("📄 Escribe la descripción:")
-        descripcion = (await self.bot.wait_for("message", check=check)).content
-
-        # 🎨 color opcional
-        await ctx.send("🎨 Color en HEX (ej: 0x5865F2) o escribe `skip`:")
-
-        color_msg = (await self.bot.wait_for("message", check=check)).content
-
-        if color_msg.lower() == "skip":
-            color = discord.Color.blurple()
-        else:
-            color = int(color_msg, 16)
+    @is_admin()
+    async def embed(self, ctx, titulo, *, descripcion):
 
         embed = discord.Embed(
             title=titulo,
             description=descripcion,
-            color=color
+            color=discord.Color.blurple()
         )
 
+        embed.set_footer(text=f"Enviado por {ctx.author}")
         await ctx.send(embed=embed)
 
-from bot.utils.stats import get_ticket_count
+    # =========================
+    # ⚙️ SETUP
+    # =========================
+    @commands.command()
+    @is_admin()
+    async def setup(self, ctx, categoria_id: int):
 
-@commands.command()
-async def stats(ctx):
-    total = get_ticket_count()
+        config = {
+            "category_id": categoria_id
+        }
 
-    embed = discord.Embed(
-        title="📊 Estadísticas",
-        description=f"Tickets abiertos: {total}",
-        color=discord.Color.green()
-    )
+        with open("config.json", "w") as f:
+            json.dump(config, f, indent=4)
 
-    await ctx.send(embed=embed)
+        await ctx.send(f"✅ Categoría configurada correctamente")
 
+    # =========================
+    # 🎫 PANEL
+    # =========================
+    @commands.command()
+    @is_admin()
+    async def panel(self, ctx):
 
-async def setup(bot):
-    if not bot.get_cog("PanelCreator"):
-    await bot.add_cog(PanelCreator(bot))
+        embed = discord.Embed(
+            title="🎫 Sistema de Tickets",
+            description="Presioná el botón para crear un ticket",
+            color=discord.Color.green()
+        )
+
+        await ctx.send(embed=embed, view=TicketPanelView())
