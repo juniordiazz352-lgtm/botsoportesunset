@@ -30,3 +30,6 @@ async def main():
 
 def run_bot():
     asyncio.run(main())
+
+if __name__ == "__main__":
+    run_bot()
