@@ -3,6 +3,8 @@ import asyncio
 import uvicorn
 
 import os
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 async def load():
     for root, dirs, files in os.walk("./bot/cogs"):
