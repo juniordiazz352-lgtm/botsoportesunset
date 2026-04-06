@@ -51,4 +51,4 @@ class PanelCreator(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Utilidades(bot))
+    await bot.add_cog(PanelCreator(bot))
