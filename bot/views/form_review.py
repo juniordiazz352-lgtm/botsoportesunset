@@ -1,5 +1,4 @@
 import discord
-from core.utils import send_log
 
 
 class FormReviewView(discord.ui.View):
@@ -9,23 +8,29 @@ class FormReviewView(discord.ui.View):
     @discord.ui.button(label="✅ Aprobar", style=discord.ButtonStyle.green)
     async def aprobar(self, interaction, button):
 
-        user_id = int(interaction.message.embeds[0].footer.text.split(": ")[1])
+        footer = interaction.message.embeds[0].footer.text
+        user_id = int(footer.split("|")[0].split(":")[1])
+        form_name = footer.split("|")[1].split(":")[1]
+
         user = await interaction.client.fetch_user(user_id)
 
-        await user.send("✅ Aprobado")
-
-        await send_log(interaction.guild, f"✅ {user} aprobado por {interaction.user}")
+        await user.send(
+            f"✅ **Formulario aprobado**\n📋 Formulario: {form_name}\n🎉 ¡Felicidades!"
+        )
 
         await interaction.response.send_message("✅ Aprobado")
 
     @discord.ui.button(label="❌ Rechazar", style=discord.ButtonStyle.red)
     async def rechazar(self, interaction, button):
 
-        user_id = int(interaction.message.embeds[0].footer.text.split(": ")[1])
+        footer = interaction.message.embeds[0].footer.text
+        user_id = int(footer.split("|")[0].split(":")[1])
+        form_name = footer.split("|")[1].split(":")[1]
+
         user = await interaction.client.fetch_user(user_id)
 
-        await user.send("❌ Rechazado")
-
-        await send_log(interaction.guild, f"❌ {user} rechazado por {interaction.user}")
+        await user.send(
+            f"❌ **Formulario rechazado**\n📋 Formulario: {form_name}\n💡 Puedes intentarlo nuevamente."
+        )
 
         await interaction.response.send_message("❌ Rechazado")
