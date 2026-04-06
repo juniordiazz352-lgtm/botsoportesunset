@@ -4,7 +4,7 @@ import json
 conn = sqlite3.connect("data.db")
 cursor = conn.cursor()
 
-# config (solo tickets/logs si quieres)
+# config
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS config (
     clave TEXT PRIMARY KEY,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS config (
 )
 """)
 
-# forms con canal
+# forms
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS forms (
     name TEXT PRIMARY KEY,
@@ -28,6 +28,17 @@ CREATE TABLE IF NOT EXISTS form_responses (
     user_id TEXT,
     form_name TEXT,
     answers TEXT
+)
+""")
+
+# tickets
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS tickets (
+    channel_id TEXT PRIMARY KEY,
+    user_id TEXT,
+    type TEXT,
+    claimed_by TEXT,
+    closed INTEGER
 )
 """)
 
