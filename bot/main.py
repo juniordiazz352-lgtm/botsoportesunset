@@ -4,6 +4,23 @@ import asyncio
 import os
 from bot.utils.bot_api import set_bot
 set_bot(bot)
+import threading
+import asyncio
+import uvicorn
+
+from bot.main import main as bot_main  # tu bot
+# 👆 si tu archivo se llama distinto avisame
+
+
+
+def run_api():
+    uvicorn.run("api.app:app", host="0.0.0.0", port=10000)
+
+if __name__ == "__main__":
+    t1 = threading.Thread(target=run_bot)
+    t1.start()
+
+    run_api()
 
 intents = discord.Intents.default()
 intents.message_content = True
