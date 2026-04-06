@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from core.db import cursor, conn
-from views.ticket_controls import TicketControlsView
+from bot.core.db import cursor, conn
+from bot.views.ticket_controls import TicketControlsView
 
 MAX_TICKETS = 4
 
