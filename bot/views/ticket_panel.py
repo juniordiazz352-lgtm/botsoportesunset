@@ -1,5 +1,5 @@
 import discord
-from bot.core.db import cursor
+from core.db import cursor
 from bot.views.ticket_controls import TicketControlsView
 
 class TicketPanelView(discord.ui.View):
