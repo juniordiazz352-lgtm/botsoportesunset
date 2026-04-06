@@ -1,13 +1,21 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+import httpx
 import sqlite3
 import json
 import os
 
 app = FastAPI()
 
+# =========================
+# 🔑 CONFIG
+# =========================
+CLIENT_ID = "TU_CLIENT_ID"
+CLIENT_SECRET = "TU_CLIENT_SECRET"
+REDIRECT_URI = "https://tu-app.onrender.com/callback"
+
 DB_PATH = "tickets.db"
-FORMS_FILE = "forms.json"
+FORMS_RESPONSES = "form_responses.json"
 
 
 # =========================
@@ -15,61 +23,62 @@ FORMS_FILE = "forms.json"
 # =========================
 @app.get("/", response_class=HTMLResponse)
 def home():
-
-    html = """
+    return """
     <html>
-    <head>
-        <title>Panel Admin</title>
-        <style>
-            body { background:#111; color:#eee; font-family: Arial; }
-            h1 { color:#00ffcc; }
-            .box { margin:20px; padding:20px; background:#1e1e1e; border-radius:10px; }
-        </style>
-    </head>
-    <body>
+    <body style="background:#111;color:#eee;font-family:Arial;">
         <h1>🌐 Panel Admin</h1>
-
-        <div class="box">
-            <h2>📋 Formularios</h2>
-            <a href="/forms">Ver formularios</a>
-        </div>
-
-        <div class="box">
-            <h2>🎫 Tickets</h2>
-            <a href="/tickets">Ver tickets</a>
-        </div>
-
+        <a href="/login">🔑 Iniciar sesión con Discord</a>
     </body>
     </html>
     """
 
-    return html
+
+# =========================
+# 🔑 LOGIN
+# =========================
+@app.get("/login")
+def login():
+    return RedirectResponse(
+        f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify"
+    )
 
 
 # =========================
-# 📋 FORMULARIOS
+# 🔁 CALLBACK
 # =========================
-@app.get("/forms", response_class=HTMLResponse)
-def forms():
+@app.get("/callback", response_class=HTMLResponse)
+async def callback(code: str):
 
-    data_html = ""
+    async with httpx.AsyncClient() as client:
+        data = {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": REDIRECT_URI
+        }
 
-    if os.path.exists(FORMS_FILE):
-        with open(FORMS_FILE, "r") as f:
-            data = json.load(f)
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-        for nombre, preguntas in data.items():
-            data_html += f"<h3>{nombre}</h3><ul>"
-            for p in preguntas:
-                data_html += f"<li>{p}</li>"
-            data_html += "</ul>"
+        token = await client.post("https://discord.com/api/oauth2/token", data=data, headers=headers)
+        token_json = token.json()
+
+        access_token = token_json.get("access_token")
+
+        user = await client.get(
+            "https://discord.com/api/users/@me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+
+        user_json = user.json()
 
     return f"""
     <html>
     <body style="background:#111;color:#eee;font-family:Arial;">
-        <h1>📋 Formularios creados</h1>
-        {data_html}
-        <br><a href="/">⬅ Volver</a>
+        <h1>Bienvenido {user_json['username']}</h1>
+
+        <a href="/tickets">🎫 Ver Tickets</a><br><br>
+        <a href="/forms">📋 Ver Formularios</a>
     </body>
     </html>
     """
@@ -89,23 +98,82 @@ def tickets():
 
     conn.close()
 
-    data_html = ""
+    html = "<h1>🎫 Tickets</h1>"
 
     for row in rows:
-        data_html += f"""
+        html += f"""
         <div style='border:1px solid #333;padding:10px;margin:10px;'>
             Channel ID: {row[0]}<br>
             User ID: {row[1]}<br>
-            Claimed By: {row[2]}
+            <a href="/close_ticket/{row[0]}">❌ Cerrar Ticket</a>
         </div>
         """
 
+    return f"<body style='background:#111;color:#eee'>{html}</body>"
+
+
+# =========================
+# ❌ CERRAR TICKET (WEB)
+# =========================
+@app.get("/close_ticket/{channel_id}")
+def close_ticket(channel_id: int):
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM tickets WHERE channel_id = ?", (channel_id,))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse("/tickets")
+
+
+# =========================
+# 📋 FORMULARIOS (RESPUESTAS)
+# =========================
+@app.get("/forms", response_class=HTMLResponse)
+def forms():
+
+    if not os.path.exists(FORMS_RESPONSES):
+        return "<h1>No hay formularios</h1>"
+
+    with open(FORMS_RESPONSES, "r") as f:
+        data = json.load(f)
+
+    html = "<h1>📋 Formularios</h1>"
+
+    for i, form in enumerate(data):
+        html += f"""
+        <div style='border:1px solid #333;padding:10px;margin:10px;'>
+            Usuario: {form['user']}<br>
+            Respuestas: {form['answers']}<br>
+            <a href="/reply_form/{i}">💬 Responder</a>
+        </div>
+        """
+
+    return f"<body style='background:#111;color:#eee'>{html}</body>"
+
+
+# =========================
+# 💬 RESPONDER FORM (WEB)
+# =========================
+@app.get("/reply_form/{index}", response_class=HTMLResponse)
+def reply_form(index: int):
+
     return f"""
-    <html>
-    <body style="background:#111;color:#eee;font-family:Arial;">
-        <h1>🎫 Tickets activos</h1>
-        {data_html}
-        <br><a href="/">⬅ Volver</a>
-    </body>
-    </html>
+    <form action="/send_reply/{index}" method="post">
+        <input name="msg" placeholder="Mensaje"><br>
+        <button type="submit">Enviar</button>
+    </form>
     """
+
+
+@app.post("/send_reply/{index}")
+async def send_reply(index: int, request: Request):
+
+    form = await request.form()
+    msg = form.get("msg")
+
+    print("Respuesta enviada:", msg)
+
+    return RedirectResponse("/forms", status_code=303)
