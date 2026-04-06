@@ -15,7 +15,10 @@ class FormReviewView(discord.ui.View):
         user = await interaction.client.fetch_user(user_id)
 
         await user.send(
-            f"✅ **Formulario aprobado**\n📋 Formulario: {form_name}\n🎉 ¡Felicidades!"
+            f"✅ FORMULARIO APROBADO\n\n"
+            f"📋 Formulario: {form_name}\n"
+            f"🎉 Has sido aceptado.\n"
+            f"📩 Revisa el servidor para más información."
         )
 
         await interaction.response.send_message("✅ Aprobado")
@@ -30,7 +33,9 @@ class FormReviewView(discord.ui.View):
         user = await interaction.client.fetch_user(user_id)
 
         await user.send(
-            f"❌ **Formulario rechazado**\n📋 Formulario: {form_name}\n💡 Puedes intentarlo nuevamente."
+            f"❌ FORMULARIO RECHAZADO\n\n"
+            f"📋 Formulario: {form_name}\n"
+            f"💡 Puedes intentarlo nuevamente."
         )
 
         await interaction.response.send_message("❌ Rechazado")
