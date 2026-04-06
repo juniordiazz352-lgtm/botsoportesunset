@@ -1,42 +1,65 @@
 import discord
-from discord.ext import commands
-from discord.ui import Modal, TextInput
-from core.db import get_forms, save_response
-from core.config import FORMS_CHANNEL_ID
-from bot.views.form_review import FormReview
+from core.db import cursor
+from bot.views.form_review import FormReviewView
 
-class DynamicForm(Modal):
-    def __init__(self, name):
-        super().__init__(title=name)
-        self.name = name
-        self.inputs = []
 
-        for q in get_forms()[name]:
-            inp = TextInput(label=q)
-            self.inputs.append(inp)
-            self.add_item(inp)
+class FormPanelView(discord.ui.View):
+    def __init__(self, forms):
+        super().__init__(timeout=None)
 
-    async def on_submit(self, interaction: discord.Interaction):
+        options = [
+            discord.SelectOption(label=name)
+            for name in forms.keys()
+        ]
 
-        answers = {i.label: i.value for i in self.inputs}
+        self.add_item(FormSelect(forms, options))
 
-        form_id = save_response(interaction.user.id, self.name, answers)
 
-        channel = interaction.guild.get_channel(FORMS_CHANNEL_ID)
+class FormSelect(discord.ui.Select):
+    def __init__(self, forms, options):
+        super().__init__(placeholder="Selecciona un formulario", options=options)
+        self.forms = forms
 
-        embed = discord.Embed(
-            title=f"📋 Nuevo formulario #{form_id}",
-            description=f"Usuario: {interaction.user.mention}"
-        )
+    async def callback(self, interaction: discord.Interaction):
 
-        for k, v in answers.items():
-            embed.add_field(name=k, value=v, inline=False)
+        nombre = self.values[0]
+        preguntas = self.forms[nombre]
 
-        await channel.send(
-            embed=embed,
-            view=FormReview(form_id, interaction.user.id)
-        )
+        respuestas = []
 
-        await interaction.response.send_message(
-            "✅ Formulario enviado", ephemeral=True
-        )
+        try:
+            await interaction.user.send(f"📋 Formulario: {nombre}")
+
+            for p in preguntas:
+                await interaction.user.send(f"❓ {p}")
+
+                def check(m):
+                    return m.author == interaction.user and isinstance(m.channel, discord.DMChannel)
+
+                msg = await interaction.client.wait_for("message", check=check)
+                respuestas.append(msg.content)
+
+            cursor.execute("SELECT valor FROM config WHERE clave='forms_channel'")
+            data = cursor.fetchone()
+
+            if not data:
+                return
+
+            canal = interaction.guild.get_channel(int(data[0]))
+
+            embed = discord.Embed(
+                title=f"📋 {nombre}",
+                color=discord.Color.blue()
+            )
+
+            for p, r in zip(preguntas, respuestas):
+                embed.add_field(name=p, value=r, inline=False)
+
+            embed.set_footer(text=f"Usuario: {interaction.user.id}")
+
+            await canal.send(embed=embed, view=FormReviewView())
+
+            await interaction.response.send_message("📩 Formulario enviado", ephemeral=True)
+
+        except:
+            await interaction.response.send_message("❌ Error en DM", ephemeral=True)
