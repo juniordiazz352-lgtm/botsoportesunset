@@ -3,6 +3,7 @@ import sqlite3
 conn = sqlite3.connect("data.db")
 cursor = conn.cursor()
 
+# config básica
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS config (
     clave TEXT PRIMARY KEY,
@@ -10,19 +11,22 @@ CREATE TABLE IF NOT EXISTS config (
 )
 """)
 
+# formularios
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS ticket_types (
-    nombre TEXT,
-    emoji TEXT,
-    categoria_id INTEGER
+CREATE TABLE IF NOT EXISTS forms (
+    name TEXT PRIMARY KEY,
+    questions TEXT
 )
 """)
 
+# respuestas
 cursor.execute("""
-CREATE TABLE tickets (
-    channel_id INTEGER,
-    user_id INTEGER,
-    claimed_by INTEGER
-);
+CREATE TABLE IF NOT EXISTS form_responses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    form_name TEXT,
+    answers TEXT
+)
 """)
+
 conn.commit()
