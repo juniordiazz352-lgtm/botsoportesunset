@@ -24,6 +24,11 @@ async def on_ready():
     bot.add_view(TicketPanelView())
     bot.add_view(TicketControlsView())
 
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    print("Comandos sincronizados")
+
 async def main():
     async with bot:
         await setup_bot()
