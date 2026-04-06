@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from core.db import cursor
+from bot.core.db import cursor
 
 
 def es_staff(member, guild):
