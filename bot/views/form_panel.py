@@ -1,91 +1,62 @@
 import discord
-from discord.ext import commands
-from core.db import cursor, conn
+from discord.ui import View, Select
+import json
+from bot.views.form_modal import DynamicFormModal
 
-TIEMPO = 150
+FORMS_FILE = "forms.json"
 
 
-class FormSelect(discord.ui.Select):
+class FormSelect(Select):
     def __init__(self):
-        cursor.execute("SELECT nombre FROM formularios")
-        forms = cursor.fetchall()
 
-        options = [
-            discord.SelectOption(
-                label=f[0],
-                description=f"Aplicar a {f[0]}",
-                emoji="📋"
+        options = []
+
+        try:
+            with open(FORMS_FILE, "r") as f:
+                data = json.load(f)
+
+            for name in data.keys():
+                options.append(
+                    discord.SelectOption(
+                        label=name.capitalize(),
+                        description=f"Formulario: {name}",
+                        emoji="📋"
+                    )
+                )
+
+        except:
+            options.append(
+                discord.SelectOption(
+                    label="No hay formularios",
+                    description="Crea uno con !crear_form",
+                    emoji="⚠️"
+                )
             )
-            for f in forms
-        ]
 
         super().__init__(
-            placeholder="📋 Selecciona formulario",
-            options=options
+            placeholder="📋 Selecciona un formulario",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id="form_select"
         )
 
     async def callback(self, interaction: discord.Interaction):
 
-        embed = discord.Embed(
-            title="📩 Formulario enviado",
-            description="Revisa tu DM",
-            color=discord.Color.green()
-        )
+        form_name = self.values[0]
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        with open(FORMS_FILE, "r") as f:
+            data = json.load(f)
 
-        await iniciar_formulario(interaction, self.values[0])
+        preguntas = data.get(form_name.lower(), [])
+
+        modal = DynamicFormModal(form_name, preguntas)
+
+        await interaction.response.send_modal(modal)
 
 
-class FormPanelView(discord.ui.View):
+class FormPanel(View):
     def __init__(self):
         super().__init__(timeout=None)
+
         self.add_item(FormSelect())
-
-
-async def iniciar_formulario(interaction, nombre):
-    user = interaction.user
-    bot = interaction.client
-
-    cursor.execute("SELECT pregunta FROM preguntas WHERE formulario=?", (nombre,))
-    preguntas = [p[0] for p in cursor.fetchall()]
-
-    respuestas = []
-
-    await user.send(f"📋 {nombre}\n⏱ 2:30 por pregunta")
-
-    def check(m):
-        return m.author == user and isinstance(m.channel, discord.DMChannel)
-
-    for p in preguntas:
-        await user.send(f"❓ {p}")
-
-        try:
-            msg = await bot.wait_for("message", timeout=TIEMPO, check=check)
-            respuestas.append(msg.content)
-
-            cursor.execute(
-                "INSERT INTO respuestas VALUES (NULL, ?, ?, ?, ?)",
-                (user.id, nombre, p, msg.content)
-            )
-            conn.commit()
-
-        except:
-            return await user.send("⏰ Tiempo agotado")
-
-    cursor.execute("SELECT valor FROM config WHERE clave='forms_channel'")
-    canal = cursor.fetchone()
-
-    if canal:
-        canal = interaction.guild.get_channel(int(canal[0]))
-
-        embed = discord.Embed(
-            title="📥 Nuevo formulario",
-            description=f"👤 {user.mention}\n📋 {nombre}",
-            color=discord.Color.blurple()
-        )
-
-        from views.form_review import ReviewView
-        await canal.send(embed=embed, view=ReviewView(user, nombre))
-
-    await user.send("✅ Formulario enviado")
