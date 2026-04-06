@@ -11,8 +11,8 @@ app = FastAPI()
 # =========================
 # 🔑 CONFIG
 # =========================
-CLIENT_ID = 1485387890786697380
-CLIENT_SECRET = eKd8rNscVk3QXcSrVu0jUr3wiqO9fAiY
+CLIENT_ID = "1485387890786697380"
+CLIENT_SECRET = "eKd8rNscVk3QXcSrVu0jUr3wiqO9fAiY"
 REDIRECT_URI = "https://botsoportesunset.onrender.com/callback"
 
 OWNER_ID = 1272066173810380861
