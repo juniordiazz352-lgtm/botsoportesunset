@@ -2,6 +2,7 @@ import discord
 from core.db import cursor
 
 
+# 🔍 OBTENER CONFIG ACTUAL
 def get_current_config(guild):
     data = {}
 
@@ -16,6 +17,22 @@ def get_current_config(guild):
     }
 
 
+# 🔍 BUSCAR CATEGORÍA
+def find_category(guild, text):
+    # ID
+    if text.isdigit():
+        ch = guild.get_channel(int(text))
+        if isinstance(ch, discord.CategoryChannel):
+            return ch
+
+    # nombre
+    for cat in guild.categories:
+        if cat.name.lower() == text.lower():
+            return cat
+
+    return None
+
+
 class SetupView(discord.ui.View):
     def __init__(self, bot):
         super().__init__(timeout=180)
@@ -25,6 +42,7 @@ class SetupView(discord.ui.View):
         self.add_item(StatusButton())
 
 
+# 🔽 SELECT CONFIG
 class SetupSelect(discord.ui.Select):
     def __init__(self, bot):
         self.bot = bot
@@ -35,62 +53,82 @@ class SetupSelect(discord.ui.Select):
             discord.SelectOption(label="🛠️ Staff", description="Configurar rol")
         ]
 
-        super().__init__(placeholder="Selecciona qué configurar", options=options)
+        super().__init__(
+            placeholder="Selecciona qué configurar",
+            options=options
+        )
 
     async def callback(self, interaction: discord.Interaction):
 
         opcion = self.values[0]
 
         await interaction.response.send_message(
-            "✏️ Envía una mención (canal/rol/categoría)",
+            "✏️ Envía: ID / mención / nombre",
             ephemeral=True
         )
 
         def check(m):
             return m.author == interaction.user
 
-        msg = await self.view.bot.wait_for("message", check=check)
+        msg = await self.bot.wait_for("message", check=check)
 
         try:
 
-            # 🎟️ Tickets
+            # 🎟️ CATEGORÍA TICKETS
             if "Tickets" in opcion:
-                if msg.channel_mentions:
-                    categoria = msg.channel_mentions[0]
+                categoria = find_category(interaction.guild, msg.content)
 
-                    cursor.execute(
-                        "INSERT OR REPLACE INTO config VALUES ('ticket_category', ?)",
-                        (str(categoria.id),)
-                    )
+                if not categoria:
+                    return await interaction.followup.send("❌ Categoría inválida", ephemeral=True)
 
-            # 📋 Forms
+                cursor.execute(
+                    "INSERT OR REPLACE INTO config VALUES ('ticket_category', ?)",
+                    (str(categoria.id),)
+                )
+
+            # 📋 CANAL FORM
             elif "Formularios" in opcion:
+                canal = None
+
                 if msg.channel_mentions:
                     canal = msg.channel_mentions[0]
+                elif msg.content.isdigit():
+                    canal = interaction.guild.get_channel(int(msg.content))
 
-                    cursor.execute(
-                        "INSERT OR REPLACE INTO config VALUES ('forms_channel', ?)",
-                        (str(canal.id),)
-                    )
+                if not canal:
+                    return await interaction.followup.send("❌ Canal inválido", ephemeral=True)
 
-            # 🛠️ Staff
+                cursor.execute(
+                    "INSERT OR REPLACE INTO config VALUES ('forms_channel', ?)",
+                    (str(canal.id),)
+                )
+
+            # 🛠️ ROL STAFF
             elif "Staff" in opcion:
+                rol = None
+
                 if msg.role_mentions:
                     rol = msg.role_mentions[0]
+                elif msg.content.isdigit():
+                    rol = interaction.guild.get_role(int(msg.content))
 
-                    cursor.execute(
-                        "INSERT OR REPLACE INTO config VALUES ('staff_role', ?)",
-                        (str(rol.id),)
-                    )
+                if not rol:
+                    return await interaction.followup.send("❌ Rol inválido", ephemeral=True)
+
+                cursor.execute(
+                    "INSERT OR REPLACE INTO config VALUES ('staff_role', ?)",
+                    (str(rol.id),)
+                )
 
             cursor.connection.commit()
 
             await interaction.followup.send("✅ Configurado correctamente", ephemeral=True)
 
-        except:
-            await interaction.followup.send("❌ Error en configuración", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
 
 
+# 📊 BOTÓN VER CONFIG
 class StatusButton(discord.ui.Button):
     def __init__(self):
         super().__init__(label="📊 Ver Configuración", style=discord.ButtonStyle.secondary)
@@ -106,7 +144,7 @@ class StatusButton(discord.ui.Button):
 
         embed.add_field(
             name="🎟️ Tickets",
-            value=config["ticket_category"].mention if config["ticket_category"] else "No configurado",
+            value=config["ticket_category"].name if config["ticket_category"] else "No configurado",
             inline=False
         )
 
