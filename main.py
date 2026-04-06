@@ -5,17 +5,12 @@ import os
 
 intents = discord.Intents.all()
 
-bot = commands.Bot(
-    command_prefix="!",
-    intents=intents
-)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 
 @bot.event
 async def on_ready():
-    print(f"🔥 Bot conectado como {bot.user}")
-
-
+    print(f"🔥 Conectado como {bot.user}")
 
 
 async def load_cogs():
@@ -34,8 +29,7 @@ async def load_cogs():
 async def main():
     async with bot:
         await load_cogs()
-     
+        await bot.start(os.getenv("TOKEN"))
 
-await bot.start(os.getenv("TOKEN"))
 
 asyncio.run(main())
