@@ -1,175 +1,102 @@
 import discord
-from discord.ext import commands
-from core.db import cursor, conn
-from core.transcripts import generar_transcript
+from discord.ui import View, button
+import sqlite3
+import datetime
+import io
 
+DB_PATH = "tickets.db"
+STAFF_ROLE_ID = 123456789012345678  # 🔥 CAMBIAR POR TU ROL STAFF
 
-def es_staff(member, guild):
-    cursor.execute("SELECT valor FROM config WHERE clave='staff_role'")
-    data = cursor.fetchone()
-    if not data:
-        return False
-    rol = guild.get_role(int(data[0]))
-    return rol in member.roles if rol else False
-
-
-class TicketControlsView(discord.ui.View):
+class TicketControlsView(View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    # 🔒 CERRAR
-    @discord.ui.button(label="🔒 Cerrar", style=discord.ButtonStyle.red)
-    async def cerrar(self, interaction: discord.Interaction, button):
+    # =========================
+    # 🔒 BOTÓN CERRAR
+    # =========================
+    @button(label="Cerrar", style=discord.ButtonStyle.red, emoji="🔒", custom_id="close_ticket")
+    async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
+        if not self.is_staff(interaction):
+            return await interaction.response.send_message("❌ No eres staff.", ephemeral=True)
 
-        archivo = await generar_transcript(interaction.channel)
+        await interaction.response.send_message("🔒 Cerrando ticket...", ephemeral=True)
 
-        from bot.core.logger import enviar_log
+        await self.save_transcript(interaction)
 
-log = discord.Embed(
-    title="🔒 Ticket cerrado",
-    color=discord.Color.red()
-)
-log.add_field(name="Staff", value=interaction.user.mention)
-log.add_field(name="Canal", value=interaction.channel.name)
-
-await enviar_log(interaction.guild, log)
-            cursor.execute(
-            "SELECT user_id FROM tickets WHERE channel_id=?",
-            (interaction.channel.id,)
-        )
-        data = cursor.fetchone()
-
-        user = interaction.guild.get_member(data[0]) if data else None
-
-        if user:
-            try:
-                await user.send(
-                    "🧾 Aquí tienes el transcript de tu ticket",
-                    file=discord.File(archivo)
-                )
-            except:
-                pass
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
         cursor.execute(
-            "UPDATE tickets SET estado='cerrado' WHERE channel_id=?",
+            "DELETE FROM tickets WHERE channel_id = ?",
             (interaction.channel.id,)
         )
+
         conn.commit()
+        conn.close()
 
-        await interaction.channel.edit(name=f"cerrado-{interaction.channel.name}")
-
-        await interaction.response.send_message("🔒 Ticket cerrado", ephemeral=True)
-
-    # 🗑 ELIMINAR
-    @discord.ui.button(label="🗑 Eliminar", style=discord.ButtonStyle.gray)
-    async def eliminar(self, interaction: discord.Interaction, button):
-
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
-
-        await interaction.response.send_message("🗑 Eliminando ticket...", ephemeral=True)
         await interaction.channel.delete()
 
-log = discord.Embed(
-    title="🗑 Ticket eliminado",
-    color=discord.Color.dark_gray()
-)
-log.add_field(name="Staff", value=interaction.user.mention)
+    # =========================
+    # 👤 BOTÓN RECLAMAR
+    # =========================
+    @button(label="Reclamar", style=discord.ButtonStyle.green, emoji="👤", custom_id="claim_ticket")
+    async def claim_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-await enviar_log(interaction.guild, log)
+        if not self.is_staff(interaction):
+            return await interaction.response.send_message("❌ No eres staff.", ephemeral=True)
 
-    # 👤 RECLAMAR
-    @discord.ui.button(label="👤 Reclamar", style=discord.ButtonStyle.green)
-    async def claim(self, interaction: discord.Interaction, button):
-
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
-
-        log = discord.Embed(
-    title="👤 Ticket reclamado",
-    color=discord.Color.blurple()
-)
-log.add_field(name="Staff", value=interaction.user.mention)
-
-await enviar_log(interaction.guild, log)
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
         cursor.execute(
-            "UPDATE tickets SET claimed_by=? WHERE channel_id=?",
+            "UPDATE tickets SET claimed_by = ? WHERE channel_id = ?",
             (interaction.user.id, interaction.channel.id)
         )
+
         conn.commit()
+        conn.close()
 
-        await interaction.response.send_message(
-            f"👤 Ticket reclamado por {interaction.user.mention}"
-        )
+        await interaction.response.send_message(f"👤 Ticket reclamado por {interaction.user.mention}")
 
-    # 🧾 TRANSCRIPT
-    @discord.ui.button(label="🧾 Transcript", style=discord.ButtonStyle.blurple)
-    async def transcript(self, interaction: discord.Interaction, button):
+    # =========================
+    # 📄 BOTÓN TRANSCRIPT
+    # =========================
+    @button(label="Transcript", style=discord.ButtonStyle.blurple, emoji="📄", custom_id="transcript_ticket")
+    async def transcript_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
+        if not self.is_staff(interaction):
+            return await interaction.response.send_message("❌ No eres staff.", ephemeral=True)
 
-        archivo = await generar_transcript(interaction.channel)
+        await interaction.response.defer(ephemeral=True)
 
-        await interaction.response.send_message(
-            "🧾 Transcript generado",
-            file=discord.File(archivo),
-            ephemeral=True
-        )
+        transcript = await self.generate_transcript(interaction.channel)
 
-    # ✏️ RENOMBRAR
-    @discord.ui.button(label="✏️ Renombrar", style=discord.ButtonStyle.blurple)
-    async def rename(self, interaction: discord.Interaction, button):
+        file = discord.File(io.BytesIO(transcript.encode()), filename="transcript.txt")
 
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
+        await interaction.followup.send("📄 Transcript generado:", file=file, ephemeral=True)
 
-        await interaction.response.send_message("✍️ Escribe el nuevo nombre:", ephemeral=True)
+    # =========================
+    # 🧠 FUNCIONES AUXILIARES
+    # =========================
 
-        def check(m):
-            return m.author == interaction.user
+    def is_staff(self, interaction: discord.Interaction):
+        return any(role.id == STAFF_ROLE_ID for role in interaction.user.roles)
+
+    async def generate_transcript(self, channel):
+        messages = []
+        async for msg in channel.history(limit=None, oldest_first=True):
+            time = msg.created_at.strftime("%Y-%m-%d %H:%M")
+            messages.append(f"[{time}] {msg.author}: {msg.content}")
+
+        return "\n".join(messages)
+
+    async def save_transcript(self, interaction):
+        transcript = await self.generate_transcript(interaction.channel)
+
+        file = discord.File(io.BytesIO(transcript.encode()), filename="transcript.txt")
 
         try:
-            msg = await interaction.client.wait_for("message", timeout=60, check=check)
+            await interaction.user.send("📄 Aquí tienes el transcript del ticket:", file=file)
         except:
-            return await interaction.followup.send("⏰ Tiempo agotado", ephemeral=True)
-
-        await interaction.channel.edit(name=msg.content)
-        await interaction.followup.send("✅ Renombrado", ephemeral=True)
-
-    # 🔓 REABRIR
-    @discord.ui.button(label="🔓 Reabrir", style=discord.ButtonStyle.green)
-    async def reopen(self, interaction: discord.Interaction, button):
-
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
-
-        nombre = interaction.channel.name.replace("cerrado-", "")
-
-        await interaction.channel.edit(name=nombre)
-
-        cursor.execute(
-            "UPDATE tickets SET estado='abierto' WHERE channel_id=?",
-            (interaction.channel.id,)
-        )
-        conn.commit()
-
-        await interaction.response.send_message("🔓 Ticket reabierto", ephemeral=True)
-
-    # 🔐 BLOQUEAR
-    @discord.ui.button(label="🔐 Bloquear", style=discord.ButtonStyle.gray)
-    async def lock(self, interaction: discord.Interaction, button):
-
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
-
-        await interaction.channel.set_permissions(
-            interaction.guild.default_role,
-            send_messages=False
-        )
-
-        await interaction.response.send_message("🔐 Ticket bloqueado", ephemeral=True)
+            pass
