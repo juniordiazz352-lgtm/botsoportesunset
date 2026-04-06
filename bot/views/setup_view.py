@@ -9,6 +9,19 @@ class SetupView(discord.ui.View):
         self.bot = bot
         self.guild = guild
 
+    # 🔧 FUNCIÓN PRO: detectar ID o mención
+    def parse_id(self, text):
+        text = text.strip()
+
+        if text.isdigit():
+            return int(text)
+
+        # <@&ID> o <#ID>
+        if text.startswith("<") and text.endswith(">"):
+            return int("".join(filter(str.isdigit, text)))
+
+        return None
+
     # 📊 RESUMEN
     @discord.ui.button(label="📊 Ver Configuración", style=discord.ButtonStyle.blurple)
     async def resumen(self, interaction: discord.Interaction, button):
@@ -58,13 +71,22 @@ class SetupView(discord.ui.View):
     @discord.ui.button(label="👮 Configurar Staff", style=discord.ButtonStyle.gray)
     async def staff(self, interaction: discord.Interaction, button):
 
-        await interaction.response.send_message("Menciona el rol:", ephemeral=True)
+        await interaction.response.send_message(
+            "Envía el **ID o menciona el rol**",
+            ephemeral=True
+        )
 
         def check(m):
             return m.author == interaction.user
 
         msg = await self.bot.wait_for("message", check=check)
-        role = msg.role_mentions[0]
+
+        role_id = self.parse_id(msg.content)
+
+        role = interaction.guild.get_role(role_id) if role_id else None
+
+        if not role:
+            return await interaction.followup.send("❌ Rol inválido", ephemeral=True)
 
         cursor.execute(
             "INSERT OR REPLACE INTO config VALUES (?, ?)",
@@ -78,17 +100,26 @@ class SetupView(discord.ui.View):
     @discord.ui.button(label="📁 Categoría Tickets", style=discord.ButtonStyle.green)
     async def tickets(self, interaction: discord.Interaction, button):
 
-        await interaction.response.send_message("Menciona la categoría:", ephemeral=True)
+        await interaction.response.send_message(
+            "Envía el **ID o menciona la categoría**",
+            ephemeral=True
+        )
 
         def check(m):
             return m.author == interaction.user
 
         msg = await self.bot.wait_for("message", check=check)
-        cat = msg.channel_mentions[0]
+
+        cat_id = self.parse_id(msg.content)
+
+        category = interaction.guild.get_channel(cat_id) if cat_id else None
+
+        if not category or category.type != discord.ChannelType.category:
+            return await interaction.followup.send("❌ Categoría inválida", ephemeral=True)
 
         cursor.execute(
             "INSERT OR REPLACE INTO config VALUES (?, ?)",
-            ("ticket_category", cat.id)
+            ("ticket_category", category.id)
         )
         conn.commit()
 
@@ -98,13 +129,22 @@ class SetupView(discord.ui.View):
     @discord.ui.button(label="📋 Canal Formularios", style=discord.ButtonStyle.blurple)
     async def forms(self, interaction: discord.Interaction, button):
 
-        await interaction.response.send_message("Menciona el canal:", ephemeral=True)
+        await interaction.response.send_message(
+            "Envía el **ID o menciona el canal**",
+            ephemeral=True
+        )
 
         def check(m):
             return m.author == interaction.user
 
         msg = await self.bot.wait_for("message", check=check)
-        canal = msg.channel_mentions[0]
+
+        canal_id = self.parse_id(msg.content)
+
+        canal = interaction.guild.get_channel(canal_id) if canal_id else None
+
+        if not canal:
+            return await interaction.followup.send("❌ Canal inválido", ephemeral=True)
 
         cursor.execute(
             "INSERT OR REPLACE INTO config VALUES (?, ?)",
@@ -118,13 +158,22 @@ class SetupView(discord.ui.View):
     @discord.ui.button(label="📝 Canal Logs", style=discord.ButtonStyle.red)
     async def logs(self, interaction: discord.Interaction, button):
 
-        await interaction.response.send_message("Menciona el canal:", ephemeral=True)
+        await interaction.response.send_message(
+            "Envía el **ID o menciona el canal**",
+            ephemeral=True
+        )
 
         def check(m):
             return m.author == interaction.user
 
         msg = await self.bot.wait_for("message", check=check)
-        canal = msg.channel_mentions[0]
+
+        canal_id = self.parse_id(msg.content)
+
+        canal = interaction.guild.get_channel(canal_id) if canal_id else None
+
+        if not canal:
+            return await interaction.followup.send("❌ Canal inválido", ephemeral=True)
 
         cursor.execute(
             "INSERT OR REPLACE INTO config VALUES (?, ?)",
