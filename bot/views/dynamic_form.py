@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 from discord.ui import Modal, TextInput
-from bot.core.db import get_forms, save_response
-from bot.core.config import FORMS_CHANNEL_ID
+from core.db import get_forms, save_response
+from core.config import FORMS_CHANNEL_ID
 from bot.views.form_review import FormReview
 
 class DynamicForm(Modal):
