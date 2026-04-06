@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS config (
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS ticket_types (
     nombre TEXT,
-    emoji TEXT
+    emoji TEXT,
+    categoria_id INTEGER
 )
 """)
 
