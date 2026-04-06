@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from bot.core.db import cursor, conn
-from bot.core.transcripts import generar_transcript
+from core.db import cursor, conn
+from core.transcripts import generar_transcript
 
 
 def es_staff(member, guild):
