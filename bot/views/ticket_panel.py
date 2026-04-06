@@ -76,9 +76,9 @@ log.add_field(name="Canal", value=channel.mention)
 
 await enviar_log(interaction.guild, log)
 
-        cursor.execute(
-            "INSERT INTO tickets VALUES (?, ?, ?, ?, ?)",
-            (user.id, channel.id, self.nombre, "abierto", None)
+cursor.execute(
+"INSERT INTO tickets VALUES (?, ?, ?, ?, ?)",
+(user.id, channel.id, self.nombre, "abierto", None)
         )
         conn.commit()
 
