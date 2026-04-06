@@ -49,6 +49,20 @@ class PanelCreator(commands.Cog):
 
         await ctx.send(embed=embed)
 
+from bot.utils.stats import get_ticket_count
+
+@commands.command()
+async def stats(ctx):
+    total = get_ticket_count()
+
+    embed = discord.Embed(
+        title="📊 Estadísticas",
+        description=f"Tickets abiertos: {total}",
+        color=discord.Color.green()
+    )
+
+    await ctx.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(PanelCreator(bot))
