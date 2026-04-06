@@ -31,6 +31,24 @@ async def on_submit(self, interaction: discord.Interaction):
         color=discord.Color.orange()
     )
 
+    import json, os
+
+FILE = "form_responses.json"
+
+data = []
+
+if os.path.exists(FILE):
+    with open(FILE, "r") as f:
+        data = json.load(f)
+
+data.append({
+    "user": str(interaction.user),
+    "answers": respuestas
+})
+
+with open(FILE, "w") as f:
+    json.dump(data, f, indent=4)
+    
     embed.set_footer(text=f"Usuario: {interaction.user} | ID: {interaction.user.id}")
 
     channel = interaction.guild.get_channel(1489086693188305040)
