@@ -6,9 +6,6 @@ app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"status": "Bot activo 🚀"}
-
-# Ejecutar el bot en segundo plano
-import threading
+    return {"status": "ok"}
 
 threading.Thread(target=run_bot, daemon=True).start()
