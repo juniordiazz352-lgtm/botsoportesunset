@@ -2,14 +2,15 @@ import discord
 from discord.ext import commands
 import asyncio
 import os
-from bot.utils.bot_api import set_bot
-set_bot(bot)
 
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+from bot.utils.bot_api import set_bot
+set_bot(bot)
 
 async def setup_bot():
     await bot.load_extension("bot.cogs.ticket")
