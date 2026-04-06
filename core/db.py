@@ -1,9 +1,10 @@
 import sqlite3
+import json
 
 conn = sqlite3.connect("data.db")
 cursor = conn.cursor()
 
-# config básica
+# config (solo tickets/logs si quieres)
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS config (
     clave TEXT PRIMARY KEY,
@@ -11,11 +12,12 @@ CREATE TABLE IF NOT EXISTS config (
 )
 """)
 
-# formularios
+# forms con canal
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS forms (
     name TEXT PRIMARY KEY,
-    questions TEXT
+    questions TEXT,
+    channel_id TEXT
 )
 """)
 
