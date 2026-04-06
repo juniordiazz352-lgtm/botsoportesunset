@@ -36,8 +36,7 @@ log.add_field(name="Staff", value=interaction.user.mention)
 log.add_field(name="Canal", value=interaction.channel.name)
 
 await enviar_log(interaction.guild, log)
-
-        cursor.execute(
+            cursor.execute(
             "SELECT user_id FROM tickets WHERE channel_id=?",
             (interaction.channel.id,)
         )
