@@ -49,7 +49,7 @@ async def main():
 
 async def setup_bot():
     for filename in os.listdir("./bot/cogs"):
-        if filename.endswith(".py"):
+        if filename.endswith(".py") and filename != "__init__.py":
             try:
                 await bot.load_extension(f"bot.cogs.{filename[:-3]}")
                 print(f"✅ Cargado: {filename}")
