@@ -1,32 +1,31 @@
-import json
 from core.db import cursor
+import json
 
 
-def save_form(name, questions, channel_id):
+def create_ticket(channel_id, user_id, ticket_type):
     cursor.execute(
-        "INSERT OR REPLACE INTO forms VALUES (?, ?, ?)",
-        (name, json.dumps(questions), str(channel_id))
+        "INSERT INTO tickets VALUES (?, ?, ?, ?, ?)",
+        (channel_id, user_id, ticket_type, None, 0)
     )
     cursor.connection.commit()
 
 
-def get_forms():
-    cursor.execute("SELECT * FROM forms")
-    data = cursor.fetchall()
-
-    forms = {}
-    for name, q, ch in data:
-        forms[name] = {
-            "questions": json.loads(q),
-            "channel_id": int(ch)
-        }
-
-    return forms
+def get_ticket(channel_id):
+    cursor.execute("SELECT * FROM tickets WHERE channel_id=?", (channel_id,))
+    return cursor.fetchone()
 
 
-def save_response(user_id, form_name, answers):
+def update_claim(channel_id, user_id):
     cursor.execute(
-        "INSERT INTO form_responses (user_id, form_name, answers) VALUES (?, ?, ?)",
-        (user_id, form_name, json.dumps(answers))
+        "UPDATE tickets SET claimed_by=? WHERE channel_id=?",
+        (user_id, channel_id)
+    )
+    cursor.connection.commit()
+
+
+def close_ticket(channel_id):
+    cursor.execute(
+        "UPDATE tickets SET closed=1 WHERE channel_id=?",
+        (channel_id,)
     )
     cursor.connection.commit()
