@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from bot.core.db import cursor, conn
+from core.db import cursor, conn
 from bot.views.ticket_panel import TicketPanelView
 
 
