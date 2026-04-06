@@ -2,91 +2,124 @@ import discord
 from core.db import cursor
 
 
+def get_current_config(guild):
+    data = {}
+
+    cursor.execute("SELECT * FROM config")
+    for key, value in cursor.fetchall():
+        data[key] = value
+
+    return {
+        "ticket_category": guild.get_channel(int(data.get("ticket_category", 0))),
+        "forms_channel": guild.get_channel(int(data.get("forms_channel", 0))),
+        "staff_role": guild.get_role(int(data.get("staff_role", 0)))
+    }
+
+
 class SetupView(discord.ui.View):
     def __init__(self, bot):
-        super().__init__(timeout=120)
+        super().__init__(timeout=180)
         self.bot = bot
 
-    # 🎟️ CONFIG TICKETS
-    @discord.ui.button(label="🎟️ Tickets", style=discord.ButtonStyle.green)
-    async def tickets(self, interaction: discord.Interaction, button):
+        self.add_item(SetupSelect(bot))
+        self.add_item(StatusButton())
+
+
+class SetupSelect(discord.ui.Select):
+    def __init__(self, bot):
+        self.bot = bot
+
+        options = [
+            discord.SelectOption(label="🎟️ Tickets", description="Configurar categoría"),
+            discord.SelectOption(label="📋 Formularios", description="Configurar canal"),
+            discord.SelectOption(label="🛠️ Staff", description="Configurar rol")
+        ]
+
+        super().__init__(placeholder="Selecciona qué configurar", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+
+        opcion = self.values[0]
 
         await interaction.response.send_message(
-            "📂 Envia el ID de la categoría de tickets",
+            "✏️ Envía una mención (canal/rol/categoría)",
             ephemeral=True
         )
 
         def check(m):
             return m.author == interaction.user
 
-        msg = await self.bot.wait_for("message", check=check)
+        msg = await self.view.bot.wait_for("message", check=check)
 
         try:
-            category_id = int(msg.content)
 
-            cursor.execute(
-                "INSERT OR REPLACE INTO config VALUES ('ticket_category', ?)",
-                (str(category_id),)
-            )
+            # 🎟️ Tickets
+            if "Tickets" in opcion:
+                if msg.channel_mentions:
+                    categoria = msg.channel_mentions[0]
+
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO config VALUES ('ticket_category', ?)",
+                        (str(categoria.id),)
+                    )
+
+            # 📋 Forms
+            elif "Formularios" in opcion:
+                if msg.channel_mentions:
+                    canal = msg.channel_mentions[0]
+
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO config VALUES ('forms_channel', ?)",
+                        (str(canal.id),)
+                    )
+
+            # 🛠️ Staff
+            elif "Staff" in opcion:
+                if msg.role_mentions:
+                    rol = msg.role_mentions[0]
+
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO config VALUES ('staff_role', ?)",
+                        (str(rol.id),)
+                    )
+
             cursor.connection.commit()
 
-            await interaction.followup.send("✅ Categoría configurada", ephemeral=True)
+            await interaction.followup.send("✅ Configurado correctamente", ephemeral=True)
 
         except:
-            await interaction.followup.send("❌ ID inválido", ephemeral=True)
+            await interaction.followup.send("❌ Error en configuración", ephemeral=True)
 
-    # 📋 CONFIG FORMS (CANAL LOG)
-    @discord.ui.button(label="📋 Formularios", style=discord.ButtonStyle.blurple)
-    async def forms(self, interaction: discord.Interaction, button):
 
-        await interaction.response.send_message(
-            "📨 Envia el ID del canal de logs/forms",
-            ephemeral=True
+class StatusButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="📊 Ver Configuración", style=discord.ButtonStyle.secondary)
+
+    async def callback(self, interaction: discord.Interaction):
+
+        config = get_current_config(interaction.guild)
+
+        embed = discord.Embed(
+            title="📊 Configuración Actual",
+            color=discord.Color.green()
         )
 
-        def check(m):
-            return m.author == interaction.user
-
-        msg = await self.bot.wait_for("message", check=check)
-
-        try:
-            channel_id = int(msg.content)
-
-            cursor.execute(
-                "INSERT OR REPLACE INTO config VALUES ('forms_channel', ?)",
-                (str(channel_id),)
-            )
-            cursor.connection.commit()
-
-            await interaction.followup.send("✅ Canal configurado", ephemeral=True)
-
-        except:
-            await interaction.followup.send("❌ ID inválido", ephemeral=True)
-
-    # 🛠️ CONFIG STAFF
-    @discord.ui.button(label="🛠️ Staff", style=discord.ButtonStyle.red)
-    async def staff(self, interaction: discord.Interaction, button):
-
-        await interaction.response.send_message(
-            "👑 Envia el ID del rol staff",
-            ephemeral=True
+        embed.add_field(
+            name="🎟️ Tickets",
+            value=config["ticket_category"].mention if config["ticket_category"] else "No configurado",
+            inline=False
         )
 
-        def check(m):
-            return m.author == interaction.user
+        embed.add_field(
+            name="📋 Formularios",
+            value=config["forms_channel"].mention if config["forms_channel"] else "No configurado",
+            inline=False
+        )
 
-        msg = await self.bot.wait_for("message", check=check)
+        embed.add_field(
+            name="🛠️ Staff",
+            value=config["staff_role"].mention if config["staff_role"] else "No configurado",
+            inline=False
+        )
 
-        try:
-            role_id = int(msg.content)
-
-            cursor.execute(
-                "INSERT OR REPLACE INTO config VALUES ('staff_role', ?)",
-                (str(role_id),)
-            )
-            cursor.connection.commit()
-
-            await interaction.followup.send("✅ Rol staff configurado", ephemeral=True)
-
-        except:
-            await interaction.followup.send("❌ ID inválido", ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
