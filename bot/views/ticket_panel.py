@@ -1,58 +1,38 @@
 import discord
-from core.db import cursor
-from bot.views.ticket_controls import TicketControlsView
-
-cooldowns = {}
 
 class TicketPanelView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-        cursor.execute("SELECT nombre, emoji FROM ticket_types")
-        tipos = cursor.fetchall()
-
-        for nombre, emoji in tipos:
-            self.add_item(TicketButton(nombre, emoji))
-
-
-class TicketButton(discord.ui.Button):
-    def __init__(self, nombre, emoji):
-        super().__init__(
-            label=nombre,
-            emoji=emoji,
-            style=discord.ButtonStyle.blurple
-        import time
-
-user_id = interaction.user.id
-now = time.time()
-
-if user_id in cooldowns and now - cooldowns[user_id] < 10:
-    return await interaction.response.send_message(
-        "⏳ Espera antes de crear otro ticket.",
-        ephemeral=True
-    )
-
-cooldowns[user_id] = now)
-        self.nombre = nombre
-
-    async def callback(self, interaction: discord.Interaction):
+    @discord.ui.button(label="Crear Ticket", style=discord.ButtonStyle.green, emoji="🎫")
+    async def create_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         guild = interaction.guild
         user = interaction.user
 
+        # 🔒 categoría (poné tu ID si usás setup)
+        category = discord.utils.get(guild.categories, name="Tickets")
+
+        # permisos
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            user: discord.PermissionOverwrite(view_channel=True, send_messages=True)
+        }
+
+        # crear canal
         channel = await guild.create_text_channel(
-            f"{self.nombre}-{user.name}"
+            name=f"ticket-{user.name}",
+            overwrites=overwrites,
+            category=category
         )
 
-        await channel.send(
-            f"{user.mention}",
-            embed=discord.Embed(
-                title="🎫 Ticket abierto",
-                description="El Equipo de Soporte te respondera en un momento,No tienen un horario definido pero llegaran en breve,porfavor se paciente",
-                color=discord.Color.green()
-            ),
-            view=TicketControlsView()
+        embed = discord.Embed(
+            title="🎫 Ticket creado",
+            description="Un staff te atenderá pronto.",
+            color=discord.Color.green()
         )
+
+        await channel.send(content=user.mention, embed=embed)
 
         await interaction.response.send_message(
             f"✅ Ticket creado: {channel.mention}",
