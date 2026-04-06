@@ -16,27 +16,32 @@ class DynamicFormModal(discord.ui.Modal):
                 )
             )
 
-    async def on_submit(self, interaction: discord.Interaction):
+  from bot.views.form_review import FormReviewView
 
-        respuestas = "\n".join(
-            f"**{child.label}**\n{child.value}"
-            for child in self.children
+async def on_submit(self, interaction: discord.Interaction):
+
+    respuestas = "\n".join(
+        f"**{child.label}**\n{child.value}"
+        for child in self.children
+    )
+
+    embed = discord.Embed(
+        title=f"📋 Nuevo formulario: {self.nombre}",
+        description=respuestas,
+        color=discord.Color.orange()
+    )
+
+    embed.set_footer(text=f"Usuario: {interaction.user} | ID: {interaction.user.id}")
+
+    channel = interaction.guild.get_channel(1489086693188305040)
+
+    if channel:
+        await channel.send(
+            embed=embed,
+            view=FormReviewView(interaction.user.id)
         )
 
-        embed = discord.Embed(
-            title=f"📋 Nuevo formulario: {self.nombre}",
-            description=respuestas,
-            color=discord.Color.orange()
-        )
-
-        embed.set_footer(text=f"Usuario: {interaction.user}")
-
-        channel = interaction.guild.get_channel(1489086693188305040)
-
-        if channel:
-            await channel.send(embed=embed)
-
-        await interaction.response.send_message(
-            "✅ Formulario enviado correctamente",
-            ephemeral=True
-        )
+    await interaction.response.send_message(
+        "✅ Formulario enviado correctamente",
+        ephemeral=True
+    )
