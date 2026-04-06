@@ -1,60 +1,93 @@
-import discord
 from discord.ext import commands
-import json
-import os
-
-FORMS_FILE = "forms.json"
+import discord
+from core.utils import save_form, get_forms
 
 
 class Forms(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # =========================
-    # 🧾 CREAR FORMULARIO
-    # =========================
+    # 🔥 CREAR FORM BIEN HECHO
     @commands.command()
-    async def crear_form(self, ctx, nombre, *, preguntas):
+    @commands.has_permissions(administrator=True)
+    async def crearform(self, ctx):
 
-        preguntas_lista = [p.strip() for p in preguntas.split("|") if p.strip()]
+        def check(m): return m.author == ctx.author and m.channel == ctx.channel
 
-        if not preguntas_lista:
-            return await ctx.send("❌ Debes poner al menos una pregunta.")
+        await ctx.send("📝 Nombre del formulario:")
+        nombre = (await self.bot.wait_for("message", check=check)).content
 
-        data = {}
+        await ctx.send("📄 Canal donde se enviarán respuestas (ID o mención):")
+        canal_msg = await self.bot.wait_for("message", check=check)
 
-        if os.path.exists(FORMS_FILE):
-            with open(FORMS_FILE, "r") as f:
-                data = json.load(f)
+        canal_id = int("".join(filter(str.isdigit, canal_msg.content)))
+        canal = ctx.guild.get_channel(canal_id)
 
-        data[nombre.lower()] = preguntas_lista
+        if not canal:
+            return await ctx.send("❌ Canal inválido")
 
-        with open(FORMS_FILE, "w") as f:
-            json.dump(data, f, indent=4)
+        await ctx.send("❓ Preguntas (`listo` para terminar):")
 
-        await ctx.send(f"✅ Formulario `{nombre}` creado con {len(preguntas_lista)} preguntas.")
+        preguntas = []
+        while True:
+            msg = await self.bot.wait_for("message", check=check)
 
-    # =========================
-    # 📋 PANEL FORMULARIOS
-    # =========================
+            if msg.content.lower() == "listo":
+                break
+
+            preguntas.append(msg.content)
+
+        save_form(nombre, preguntas, canal.id)
+
+        await ctx.send(f"✅ Form `{nombre}` creado en {canal.mention}")
+
+    # 🔥 PANEL FORM PRO
     @commands.command()
-    async def panel_form(self, ctx):
+    @commands.has_permissions(administrator=True)
+    async def panelform(self, ctx):
 
-        from bot.views.form_panel import FormPanel
+        def check(m): return m.author == ctx.author and m.channel == ctx.channel
 
-        embed = discord.Embed(
-            title="📋 Sistema de Formularios",
-            description=(
-                "Selecciona un formulario del menú.\n\n"
-                "📌 Completa la información correctamente.\n"
-                "⚠️ Evita enviar spam."
-            ),
-            color=discord.Color.orange()
+        forms = get_forms()
+
+        if not forms:
+            return await ctx.send("❌ No hay formularios")
+
+        await ctx.send("📝 Título del panel:")
+        titulo = (await self.bot.wait_for("message", check=check)).content
+
+        await ctx.send("📄 Descripción:")
+        descripcion = (await self.bot.wait_for("message", check=check)).content
+
+        await ctx.send(
+            "📋 Formularios disponibles:\n" +
+            "\n".join([f"- {f}" for f in forms.keys()])
         )
 
-        embed.set_footer(text="Sistema Sunset Boulevard")
+        await ctx.send("✏️ Escribe los nombres que quieres usar (`listo` para terminar)")
 
-        await ctx.send(embed=embed, view=FormPanel())
+        seleccionados = {}
+
+        while True:
+            msg = await self.bot.wait_for("message", check=check)
+
+            if msg.content.lower() == "listo":
+                break
+
+            if msg.content in forms:
+                seleccionados[msg.content] = forms[msg.content]
+            else:
+                await ctx.send("❌ No existe")
+
+        from bot.views.dynamic_form import FormPanelView
+
+        embed = discord.Embed(
+            title=titulo,
+            description=descripcion,
+            color=discord.Color.blurple()
+        )
+
+        await ctx.send(embed=embed, view=FormPanelView(seleccionados))
 
 
 async def setup(bot):
