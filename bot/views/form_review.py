@@ -1,69 +1,74 @@
 import discord
-from discord.ext import commands
-from core.db import cursor
 
-
-def es_staff(member, guild):
-    cursor.execute("SELECT valor FROM config WHERE clave='staff_role'")
-    data = cursor.fetchone()
-    if not data:
-        return False
-    rol = guild.get_role(int(data[0]))
-    return rol in member.roles if rol else False
-
-
-class ReviewView(discord.ui.View):
-    def __init__(self, user, form):
+class FormReviewView(discord.ui.View):
+    def __init__(self, user_id):
         super().__init__(timeout=None)
-        self.user = user
-        self.form = form
+        self.user_id = user_id
 
-    @discord.ui.button(label="✅ Aprobar", style=discord.ButtonStyle.green)
-    async def aprobar(self, interaction: discord.Interaction, button):
+    # =========================
+    # ✅ APROBAR
+    # =========================
+    @discord.ui.button(label="Aprobar", style=discord.ButtonStyle.green, emoji="✅")
+    async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
+        user = interaction.guild.get_member(self.user_id)
 
-        await interaction.response.send_message("✍️ Escribe mensaje:", ephemeral=True)
+        if user:
+            try:
+                await user.send("✅ Tu formulario fue aprobado.")
+            except:
+                pass
 
-        def check(m):
-            return m.author == interaction.user
+        await interaction.response.send_message("✅ Formulario aprobado", ephemeral=True)
 
-        msg = await interaction.client.wait_for("message", check=check)
+    # =========================
+    # ❌ RECHAZAR
+    # =========================
+    @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.red, emoji="❌")
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        # 🎭 dar rol automático
-        cursor.execute(
-            "SELECT role_id FROM form_roles WHERE formulario=?",
-            (self.form,)
-        )
-        data = cursor.fetchone()
+        user = interaction.guild.get_member(self.user_id)
 
-        if data:
-            role = interaction.guild.get_role(int(data[0]))
-            if role:
-                await self.user.add_roles(role)
+        if user:
+            try:
+                await user.send("❌ Tu formulario fue rechazado.")
+            except:
+                pass
 
-        await self.user.send(
-            f"🎉 Aprobado\n📋 {self.form}\n📩 {msg.content}"
-        )
+        await interaction.response.send_message("❌ Formulario rechazado", ephemeral=True)
 
-        await interaction.followup.send("Aprobado", ephemeral=True)
+    # =========================
+    # 💬 RESPONDER
+    # =========================
+    @discord.ui.button(label="Responder", style=discord.ButtonStyle.blurple, emoji="💬")
+    async def responder(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-    @discord.ui.button(label="❌ Rechazar", style=discord.ButtonStyle.red)
-    async def rechazar(self, interaction: discord.Interaction, button):
+        await interaction.response.send_modal(ResponseModal(self.user_id))
 
-        if not es_staff(interaction.user, interaction.guild):
-            return await interaction.response.send_message("❌ Solo staff", ephemeral=True)
 
-        await interaction.response.send_message("Motivo:", ephemeral=True)
+# =========================
+# 🧾 MODAL RESPUESTA
+# =========================
+class ResponseModal(discord.ui.Modal, title="Enviar respuesta"):
 
-        def check(m):
-            return m.author == interaction.user
+    mensaje = discord.ui.TextInput(
+        label="Mensaje para el usuario",
+        style=discord.TextStyle.paragraph
+    )
 
-        msg = await interaction.client.wait_for("message", check=check)
+    def __init__(self, user_id):
+        super().__init__()
+        self.user_id = user_id
 
-        await self.user.send(
-            f"❌ Rechazado\n📋 {self.form}\n📩 {msg.content}"
-        )
+    async def on_submit(self, interaction: discord.Interaction):
 
-        await interaction.followup.send("Rechazado", ephemeral=True)
+        user = interaction.guild.get_member(self.user_id)
+
+        if user:
+            try:
+                await user.send(f"💬 Respuesta del staff:\n\n{self.mensaje.value}")
+                await interaction.response.send_message("✅ Mensaje enviado", ephemeral=True)
+            except:
+                await interaction.response.send_message("❌ No se pudo enviar DM", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ Usuario no encontrado", ephemeral=True)
