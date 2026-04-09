@@ -1,45 +1,19 @@
-import sqlite3
 import json
+import os
 
-conn = sqlite3.connect("data.db")
-cursor = conn.cursor()
+DB_FILE = "data.json"
 
-# config
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS config (
-    clave TEXT PRIMARY KEY,
-    valor TEXT
-)
-""")
+def load():
+    if not os.path.exists(DB_FILE):
+        return {}
+    with open(DB_FILE, "r") as f:
+        return json.load(f)
 
-# forms
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS forms (
-    name TEXT PRIMARY KEY,
-    questions TEXT,
-    channel_id TEXT
-)
-""")
+def save(data):
+    with open(DB_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
-# respuestas
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS form_responses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT,
-    form_name TEXT,
-    answers TEXT
-)
-""")
-
-# tickets
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS tickets (
-    channel_id TEXT PRIMARY KEY,
-    user_id TEXT,
-    type TEXT,
-    claimed_by TEXT,
-    closed INTEGER
-)
-""")
-
-conn.commit()
+def save_form(user_id, responses):
+    data = load()
+    data[str(user_id)] = responses
+    save(data)
